@@ -1,0 +1,2 @@
+IMPORTANT: You must run ".\pip install spotipy" and ".\pip install keyboard" in your scripts file before running
+Also the file to run is ValoBeatsMain
