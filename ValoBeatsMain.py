@@ -36,21 +36,61 @@ def createSettingsWindow():
     settingsCanvas.create_text(640, 200, text = "Volume", font = ("Lucida Sans", 30), fill = "#132a4f")
 
     #creates a scale and a button to put on the canvas
-    volumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient=tk.HORIZONTAL, resolution = 1)
-    confirmButton = Button(settingsWindow, text = "Save", command = closeSettingsWindow)
+    global volumeScale
+    volumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1)
+    
+    #sets the orginal volume
+    settingsFile = open("Config", "r")
+    volumeScale.set(int(settingsFile.readlines()[0][0:3]))
+    settingsFile.close()
+
+    confirmButton = Button(settingsWindow, text = "Save", command = saveSettings)
 
     #adds the scale and button to the canvas
     volumeScaleWindow   = settingsCanvas.create_window(640, 300, window = volumeScale)
     confirmButtonWindow = settingsCanvas.create_window(640, 600, window = confirmButton)
 
-def closeSettingsWindow():
+def saveSettings():
     '''Closes the settings window'''
+    settingsFile = open("Config", "w")
+
+    #writing volume
+    if (volumeScale.get() < 10):
+        settingsFile.write("00" + str(volumeScale.get()) + "\n")
+    elif (volumeScale.get() < 100):
+        settingsFile.write("0" + str(volumeScale.get()) + "\n")
+    else:
+        settingsFile.write(str(volumeScale.get()) + "\n")
+
+
+    settingsFile.close()
+    spotifyIntern.hotKeyPressed()
+    #write first 3 lines
+    #switch to "a"
+    #search through all links for the new link
+    #if not found
+    #   ask user for time
+    #write to list
+    #close
+
     settingsWindow.destroy()
 
+
 def main():
+    '''Main Function creates the main window'''
+
+    '''Config file is formatted so that the 
+    First line is the volume
+    Second line is the hotkey
+    Third line is the playlist url
+    Then every line after that is all of the spotify songs that have been saved
+    in the format: First word of the line is the url of a song
+    and second word is the the offset timer'''
+    global settingsFile
+
     #creates a spotify interactor
-    global spotifyInter
-    spotifyInter = SI.SpotifyInteractor()
+    global spotifyIntern
+    spotifyIntern = SI.SpotifyInteractor()
     #creates main window
     global mainWindow
     mainWindow = tk.Tk()
@@ -83,7 +123,7 @@ def main():
     #adds the button to the canvas
     settingsButtonWindow = mainCanvas.create_window(320, 180, window = settingsButton)
 
-    spotifyInter.createHotKey()
+
     mainWindow.mainloop()
 
 
