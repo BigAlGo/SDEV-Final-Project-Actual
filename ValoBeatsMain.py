@@ -1,10 +1,15 @@
 import tkinter as tk
 from tkinter import *
+from tkinter import messagebox
+
 import SpotifyInteractor as SI
 
 
 def createSettingsWindow():
     '''Creates the settings window'''
+    #cancel the hotkey
+    spotifyIntern.removeHotkeys()
+
     #creates settings window
     global settingsWindow
     settingsWindow = tk.Toplevel()
@@ -33,28 +38,54 @@ def createSettingsWindow():
     settingsCanvas.create_image(0, 0, image = settingImage, anchor = "nw")
 
     #adds text to the window
-    settingsCanvas.create_text(640, 200, text = "Volume", font = ("Lucida Sans", 30), fill = "#132a4f")
+    settingsCanvas.create_text(320, 225, text = "Volume", font = ("Lucida Sans", 30), fill = "#d1656c")
+    settingsCanvas.create_text(960, 225, text = "HotKeys", font = ("Lucida Sans", 30), fill = "#2b4055")
 
-    #creates a scale and a button to put on the canvas
+    #creates a scale, a button, and text entry to put on the canvas
     global volumeScale
-    volumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1)
+    volumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d1656c", fg = "#2a3b52", highlightbackground = "#d1656c")
     
-    #sets the orginal volume
     settingsFile = open("Config", "r")
-    volumeScale.set(int(settingsFile.readlines()[0][0:3]))
+    fileLines = settingsFile.readlines()
+
+    #sets the orginal volume to be the last volume
+    volumeScale.set(int(fileLines[0][0:3]))
+
+    #creates the entry fields for the hotkeys
+    global hotKeyText1
+    global hotKeyText2
+    hotKeyText1 = Entry(settingsWindow, bg = "#4f374d", fg = "#d1656c", highlightbackground = "#4f374d")
+    hotKeyText2 = Entry(settingsWindow, bg = "#4f374d", fg = "#d1656c", highlightbackground = "#4f374d")
+    
+    #adds the preveious hotkeys to the entry fields
+    if (fileLines[1].find("/,") != -1):
+        #inserts from 0 to /,
+        hotKeyText1.insert(0, fileLines[1][0 : fileLines[1].find("/,")])
+        #inserts from /, to end
+        hotKeyText2.insert(0, fileLines[1][fileLines[1].find("/,") + 2 :])
+    else:
+        hotKeyText1.insert(0, fileLines[1])
+
     settingsFile.close()
 
-    confirmButton = Button(settingsWindow, text = "Save", command = saveSettings)
+    confirmButton = Button(settingsWindow, text = "Save", command = saveSettings, bg = "#4c9ba4")
 
     #adds the scale and button to the canvas
-    volumeScaleWindow   = settingsCanvas.create_window(640, 300, window = volumeScale)
+    volumeScaleWindow   = settingsCanvas.create_window(320, 300, window = volumeScale)
     confirmButtonWindow = settingsCanvas.create_window(640, 600, window = confirmButton)
+    hotKeyText1Window = settingsCanvas.create_window(960, 285, window = hotKeyText1)
+    hotKeyText2Window = settingsCanvas.create_window(960, 305, window = hotKeyText2)
 
 def saveSettings():
-    '''Closes the settings window'''
+    '''opens the settings window to write to'''
+    #incase there was a bad input
+    settingsFile = open("Config", "r")
+    file = settingsFile.readlines()[1]
+    settingsFile.close()
+
     settingsFile = open("Config", "w")
 
-    #writing volume
+    #writing volume in correct format
     if (volumeScale.get() < 10):
         settingsFile.write("00" + str(volumeScale.get()) + "\n")
     elif (volumeScale.get() < 100):
@@ -62,9 +93,19 @@ def saveSettings():
     else:
         settingsFile.write(str(volumeScale.get()) + "\n")
 
+    if len(hotKeyText2.get()) == 0:
+        settingsFile.write(hotKeyText1.get())
+    else:
+        settingsFile.write(hotKeyText1.get() + "/," + hotKeyText2.get())
 
     settingsFile.close()
-    spotifyIntern.hotKeyPressed()
+    if (not spotifyIntern.makeHotKey()):
+        if len(hotKeyText2.get()) == 0:
+            messagebox.showwarning("WARNING", hotKeyText1.get() + " is not a valid hotkey")
+        else:
+            messagebox.showwarning("WARNING", hotKeyText1.get() + " or " + hotKeyText2.get() + " is not a valid hotkey, please try again")
+        return
+    
     #write first 3 lines
     #switch to "a"
     #search through all links for the new link
