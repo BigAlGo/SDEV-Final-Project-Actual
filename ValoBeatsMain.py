@@ -32,39 +32,44 @@ def createSettingsWindow():
 
     #gets photo for settings
     global settingImage
-    settingImage = PhotoImage(file = "SettingsBG.gif")
+    settingImage = PhotoImage(file = "Images\\SettingsBG.gif")
 
     #adds the image to the canvas
     settingsCanvas.create_image(0, 0, image = settingImage, anchor = "nw")
 
     #adds text to the window
-    settingsCanvas.create_text(320, 225, text = "Volume", font = ("Lucida Sans", 30), fill = "#d1656c")
+    settingsCanvas.create_text(320, 225, text = "Volume", font = ("Lucida Sans", 30), fill = "#d85965")
     settingsCanvas.create_text(960, 225, text = "HotKeys", font = ("Lucida Sans", 30), fill = "#2b4055")
+    settingsCanvas.create_text(640, 270, text = "PlayList URL", font = ("Lucida Sans", 30), fill = "#c73d4c")
 
     #creates a scale, a button, and text entry to put on the canvas
     global volumeScale
-    volumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d1656c", fg = "#2a3b52", highlightbackground = "#d1656c")
+    volumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d85965", fg = "#2a3b52", highlightbackground = "#d1656c")
     
-    settingsFile = open("Config", "r")
+    settingsFile = open("Config\\settings", "r")
     fileLines = settingsFile.readlines()
 
     #sets the orginal volume to be the last volume
     volumeScale.set(int(fileLines[0][0:3]))
 
-    #creates the entry fields for the hotkeys
+    #creates the entry fields for the hotkeys and playlist
     global hotKeyText1
     global hotKeyText2
+    global playListLinkText
     hotKeyText1 = Entry(settingsWindow, bg = "#4f374d", fg = "#d1656c", highlightbackground = "#4f374d")
     hotKeyText2 = Entry(settingsWindow, bg = "#4f374d", fg = "#d1656c", highlightbackground = "#4f374d")
+    playListLinkText = Entry(settingsWindow, bg = "#eb4454", fg = "#e8fbfb", highlightbackground = "#4f374d")
     
     #adds the preveious hotkeys to the entry fields
     if (fileLines[1].find("/,") != -1):
         #inserts from 0 to /,
         hotKeyText1.insert(0, fileLines[1][0 : fileLines[1].find("/,")])
         #inserts from /, to end
-        hotKeyText2.insert(0, fileLines[1][fileLines[1].find("/,") + 2 :])
+        hotKeyText2.insert(0, fileLines[1][fileLines[1].find("/,") + 2 : -1])
     else:
-        hotKeyText1.insert(0, fileLines[1])
+        hotKeyText1.insert(0, fileLines[1][:-1])
+
+    playListLinkText.insert(0, fileLines[2])
 
     settingsFile.close()
 
@@ -72,18 +77,17 @@ def createSettingsWindow():
 
     #adds the scale and button to the canvas
     volumeScaleWindow   = settingsCanvas.create_window(320, 300, window = volumeScale)
+
     confirmButtonWindow = settingsCanvas.create_window(640, 600, window = confirmButton)
+
     hotKeyText1Window = settingsCanvas.create_window(960, 285, window = hotKeyText1)
     hotKeyText2Window = settingsCanvas.create_window(960, 305, window = hotKeyText2)
+    playListLinkWindow = settingsCanvas.create_window(640, 335, window = playListLinkText)
 
 def saveSettings():
     '''opens the settings window to write to'''
-    #incase there was a bad input
-    settingsFile = open("Config", "r")
-    file = settingsFile.readlines()[1]
-    settingsFile.close()
 
-    settingsFile = open("Config", "w")
+    settingsFile = open("Config\\settings", "w")
 
     #writing volume in correct format
     if (volumeScale.get() < 10):
@@ -93,26 +97,39 @@ def saveSettings():
     else:
         settingsFile.write(str(volumeScale.get()) + "\n")
 
-    if len(hotKeyText2.get()) == 0:
-        settingsFile.write(hotKeyText1.get())
-    else:
-        settingsFile.write(hotKeyText1.get() + "/," + hotKeyText2.get())
+    #If nothing entered
+    if len(hotKeyText1.get()) == 0:
+        messagebox.showwarning("WARNING", "Please enter a valid key into the first box")
+        settingsFile.close()
+        return
 
+    #if nothing entered in 2nd box
+    if len(hotKeyText2.get()) == 0:
+        settingsFile.write(hotKeyText1.get() + "\n")
+    else:
+        settingsFile.write(hotKeyText1.get() + "/," + hotKeyText2.get() + "\n")
+
+    settingsFile.write(playListLinkText.get())
+    
     settingsFile.close()
     if (not spotifyIntern.makeHotKey()):
         if len(hotKeyText2.get()) == 0:
-            messagebox.showwarning("WARNING", hotKeyText1.get() + " is not a valid hotkey")
+            messagebox.showwarning("WARNING", hotKeyText1.get() + " is not a valid hotkey, please try again")
         else:
             messagebox.showwarning("WARNING", hotKeyText1.get() + " or " + hotKeyText2.get() + " is not a valid hotkey, please try again")
         return
     
+
+    #todo:
     #write first 3 lines
-    #switch to "a"
+    #open song names in "a" mode
     #search through all links for the new link
     #if not found
     #   ask user for time
     #write to list
     #close
+    settingsFile.close()
+
 
     settingsWindow.destroy()
 
@@ -149,7 +166,7 @@ def main():
     mainWindow.geometry("640x360" + "+" + oWidth + "+" + oHeight)
 
     #gets photo for main
-    mainImage = PhotoImage(file = "ValorantMainBG.gif")
+    mainImage = PhotoImage(file = "Images\\ValorantMainBG.gif")
 
     #creates a canvas for the photo and text to be put on
     mainCanvas = Canvas(mainWindow, width = 640, height = 360)
