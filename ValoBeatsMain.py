@@ -121,7 +121,6 @@ def saveSettings():
         return
     
 
-    #todo:
     if not spotifyIntern.isValidPlaylist():
         messagebox.showwarning("WARNING", playListLinkText.get() + " is not a valid playList name, please try again")
         return
@@ -132,14 +131,7 @@ def saveSettings():
         answer = simpledialog.askfloat("Song Timing", "What Time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
         songFile.write("\n" + song + " " + str(answer))
     songFile.close
-
-    #write first 3 lines
-    #open song names in "a" mode
-    #search through all links for the new link
-    #if not found
-    #   ask user for time
-    #write to list
-    #close
+    
     settingsFile.close()
 
 
