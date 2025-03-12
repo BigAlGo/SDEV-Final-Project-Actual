@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import messagebox
+from tkinter import simpledialog
 
 import SpotifyInteractor as SI
 
@@ -121,6 +122,17 @@ def saveSettings():
     
 
     #todo:
+    if not spotifyIntern.isValidPlaylist():
+        messagebox.showwarning("WARNING", playListLinkText.get() + " is not a valid playList name, please try again")
+        return
+
+    # Asks What time you want each new song to start at
+    songFile = open("Config\\songNames", "a")
+    for song in spotifyIntern.getPlaylistLinks():
+        answer = simpledialog.askfloat("Song Timing", "What Time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
+        songFile.write("\n" + song + " " + str(answer))
+    songFile.close
+
     #write first 3 lines
     #open song names in "a" mode
     #search through all links for the new link
