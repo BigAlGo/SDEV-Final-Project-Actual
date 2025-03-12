@@ -129,7 +129,9 @@ def saveSettings():
     songFile = open("Config\\songNames", "a")
     for song in spotifyIntern.getPlaylistLinks():
         answer = simpledialog.askfloat("Song Timing", "What Time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
-        songFile.write("\n" + song + " " + str(answer))
+        if answer != None:
+            songFile.write("\n" + song + " " + str(answer))
+    
     songFile.close
     
     settingsFile.close()
