@@ -4,6 +4,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 import time
 import random
+from tkinter import messagebox
 
 
 
@@ -14,53 +15,56 @@ class SpotifyInteractor():
         self.roundNumber = 1
 
         #Initing spotify
-        SCOPE = "user-modify-playback-state user-read-playback-state playlist-read-public"
         # able to get and modify the playback state and able to read public playlists 
+        SCOPE = "user-modify-playback-state user-read-playback-state"
 
         authManagerClient = SpotifyOAuth(
-            client_id = "35661866380c4cdcb93e51cc756ee958",
-            client_secret = "fd334360adb04a7980412c946f1e00af",
-            redirect_uri = "http://localhost:1234",
-            scope = SCOPE,
-            show_dialog = True
+            client_id="35661866380c4cdcb93e51cc756ee958",
+            client_secret="fd334360adb04a7980412c946f1e00af",
+            redirect_uri="http://localhost:5000/callback",
+            scope=SCOPE,
+            show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-
-  
-    def removeHotkeys(self):
-        '''Removes any hotkeys'''
-        keyboard.remove_all_hotkeys()
+        self.spotifyClient.devices()
 
     def hotKeyPressed(self):
-        '''overall time - song time '''
+        '''Plays a song after a specified time'''
+        #Opening the current device
+        devices = self.spotifyClient.devices()
+        active_device_id = devices['devices'][0]['id']
+        
         songNameFile = open("Config\\songNames", "r")
         songLine = songNameFile.readlines()[self.songNumber]
 
         # Gets the string from after the space to before the \n
         if (songLine.find("\n") != -1):
-            songTime = songLine[songLine.find(" ") + 1 :]
+            songTime = float(songLine[songLine.find(" ") + 1 :])
         else:
-            songTime = songLine[songLine.find(" ") + 1 : -1]
-
-        print(str(songTime) + "end")
+            songTime = float(songLine[songLine.find(" ") + 1 : -1])
 
         songNameFile.close()
 
-         
+        song_uri = self.convertUrlToUri(songLine[:songLine.find(" ")])
+
         playTime = 0
-        if self.roundNumber == 12:
-            playTime = time.time() + 44 - songTime
+        if self.roundNumber == 1:
+            # First round
+            playTime = time.time() + 30.5 - songTime
+        elif self.roundNumber == 12:
+            # Half time
+            playTime = time.time() + 44.7 - songTime
         else:
-            playTime = time.time() + 30 - songTime
+            playTime = time.time() + 29.5 - songTime
 
         while time.time() < playTime:
             time.sleep(0.02)
-
-        #todo make this play a song
-        print('3.14159265358979323846264338372950')
-
+        
+        # Play a song
+        self.spotifyClient.start_playback(device_id = active_device_id, uris = [song_uri])
 
         self.songNumber = self.songNumber + 1
+        self.roundNumber = self.roundNumber + 1
         
 
     def makeHotKey(self):
@@ -86,19 +90,6 @@ class SpotifyInteractor():
                 return True
             except ValueError:
                 return False
-            
-    def getNameOfSong(self, url):
-        '''Returns the name of a song given the url'''
-        devices = self.spotifyClient.devices()
-
-        if devices["devices"]:
-            for device in devices["devices"]:
-                print(f"Device Name: {device['name']}, Type: {device['type']}, ID: {device['id']}")
-        else:
-            print("No active devices found. Open Spotify and start playing something!")
-
-        
-        return self.spotifyClient.track(url)['name']
 
     def isValidPlaylist(self):
         '''Returns if the URL on line 3 of the settings file is valid'''
@@ -168,13 +159,31 @@ class SpotifyInteractor():
         songNames.writelines(songs)
         songNames.close()
 
+    def convertUrlToUri(self, spotify_url):
+        """Extracts track ID from a Spotify URL and converts it into a Spotify URI."""
+        if "track/" in spotify_url:
+            track_id = spotify_url.split("track/")[1].split("?")[0]
+            return "spotify:track:" + track_id
+        return None
+
+
+    def getDevices(self):
+        '''Gets the divices signed into the account'''
+        return self.spotifyClient.devices()
+    
+    def getNameOfSong(self, url):
+        '''Returns the name of a song given the url'''
+        return self.spotifyClient.track(url)['name']
+
     def deleteSongFile(self):
         '''Deleats the SongNames File'''
         #Deletes the current songNames file
         open('Config\\songNames', 'w').close()
     
+    def removeHotkeys(self):
+        '''Removes any hotkeys'''
+        keyboard.remove_all_hotkeys()
 
-    
     def resetRounds(self):
         '''Resets the rounds'''
         self.roundNumber = 1

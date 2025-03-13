@@ -5,7 +5,7 @@ from tkinter import simpledialog
 
 import SpotifyInteractor as SI
 
-
+#todo add a toggle for swift play and spike rush
 def createSettingsWindow():
     '''Creates the settings window'''
     #cancel the hotkey
@@ -75,7 +75,7 @@ def createSettingsWindow():
     settingsFile.close()
 
     confirmButton = Button(settingsWindow, text = "Save", command = saveSettings, bg = "#4c9ba4")
-    reCreateButton = Button(settingsWindow, text = "Redo All Songs", command = remakeSongFile, bg = "#4c9ba4")
+    reCreateButton = Button(settingsWindow, text = "Delete All Songs", command = remakeSongFile, bg = "#4c9ba4")
 
     #adds the scale and button to the canvas
     settingsCanvas.create_window(320, 300, window = volumeScale)
@@ -134,9 +134,14 @@ def saveSettings():
         if answer != None:
             songFile.write("\n" + song + " " + str(answer))
     
-    songFile.close
-    
-    settingsFile.close()
+    songFile.close()
+
+
+    #Checking if a device is open
+    devices = spotifyIntern.getDevices()
+    if not devices['devices']:
+        messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+        return
 
     settingsWindow.destroy()
 
@@ -153,9 +158,7 @@ def main():
     First line is the volume
     Second line is the hotkey
     Third line is the playlist url
-    Then every line after that is all of the spotify songs that have been saved
-    in the format: First word of the line is the url of a song
-    and second word is the the offset timer'''
+    '''
     global settingsFile
 
     #creates a spotify interactor
