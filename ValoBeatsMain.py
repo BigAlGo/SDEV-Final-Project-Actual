@@ -75,15 +75,17 @@ def createSettingsWindow():
     settingsFile.close()
 
     confirmButton = Button(settingsWindow, text = "Save", command = saveSettings, bg = "#4c9ba4")
+    reCreateButton = Button(settingsWindow, text = "Redo All Songs", command = remakeSongFile, bg = "#4c9ba4")
 
     #adds the scale and button to the canvas
-    volumeScaleWindow   = settingsCanvas.create_window(320, 300, window = volumeScale)
+    settingsCanvas.create_window(320, 300, window = volumeScale)
 
-    confirmButtonWindow = settingsCanvas.create_window(640, 600, window = confirmButton)
+    settingsCanvas.create_window(640, 600, window = confirmButton)
+    settingsCanvas.create_window(160, 400, window = reCreateButton)
 
-    hotKeyText1Window = settingsCanvas.create_window(960, 285, window = hotKeyText1)
-    hotKeyText2Window = settingsCanvas.create_window(960, 305, window = hotKeyText2)
-    playListLinkWindow = settingsCanvas.create_window(640, 335, window = playListLinkText)
+    settingsCanvas.create_window(960, 285, window = hotKeyText1)
+    settingsCanvas.create_window(960, 305, window = hotKeyText2)
+    settingsCanvas.create_window(640, 335, window = playListLinkText)
 
 def saveSettings():
     '''opens the settings window to write to'''
@@ -136,8 +138,12 @@ def saveSettings():
     
     settingsFile.close()
 
-
     settingsWindow.destroy()
+
+def remakeSongFile():
+    answer = messagebox.askquestion("Confirmation", "Are you sure you want to DELETE ALL saved songs and redo the Song Timing for all the songs in the current playlist?")
+    if (answer == "yes"):
+        spotifyIntern.deleteSongFile()
 
 
 def main():

@@ -2,6 +2,8 @@ import keyboard
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
+import time
+import random
 
 
 
@@ -9,18 +11,18 @@ class SpotifyInteractor():
     def __init__(self):
         self.makeHotKey()
         self.songNumber = 0
+        self.roundNumber = 1
 
         #Initing spotify
-        authManagerGeneral = SpotifyClientCredentials(client_id = "35661866380c4cdcb93e51cc756ee958",
-                                        client_secret = "7b316369507444e59e11722d4e49d1c8",)
-        self.spotifyGeneral = spotipy.Spotify(auth_manager = authManagerGeneral)
-
+        SCOPE = "user-modify-playback-state user-read-playback-state playlist-read-public"
+        # able to get and modify the playback state and able to read public playlists 
 
         authManagerClient = SpotifyOAuth(
-            client_id="35661866380c4cdcb93e51cc756ee958",
-            client_secret="7b316369507444e59e11722d4e49d1c8",
-            redirect_uri="http://localhost:1234",
-            scope="user-read-playback-state"
+            client_id = "35661866380c4cdcb93e51cc756ee958",
+            client_secret = "fd334360adb04a7980412c946f1e00af",
+            redirect_uri = "http://localhost:1234",
+            scope = SCOPE,
+            show_dialog = True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
 
@@ -30,7 +32,36 @@ class SpotifyInteractor():
         keyboard.remove_all_hotkeys()
 
     def hotKeyPressed(self):
-        print("Hot key Pressed")
+        '''overall time - song time '''
+        songNameFile = open("Config\\songNames", "r")
+        songLine = songNameFile.readlines()[self.songNumber]
+
+        # Gets the string from after the space to before the \n
+        if (songLine.find("\n") != -1):
+            songTime = songLine[songLine.find(" ") + 1 :]
+        else:
+            songTime = songLine[songLine.find(" ") + 1 : -1]
+
+        print(str(songTime) + "end")
+
+        songNameFile.close()
+
+         
+        playTime = 0
+        if self.roundNumber == 12:
+            playTime = time.time() + 44 - songTime
+        else:
+            playTime = time.time() + 30 - songTime
+
+        while time.time() < playTime:
+            time.sleep(0.02)
+
+        #todo make this play a song
+        print('3.14159265358979323846264338372950')
+
+
+        self.songNumber = self.songNumber + 1
+        
 
     def makeHotKey(self):
         '''Creates the hotkey based on the config file'''
@@ -67,7 +98,7 @@ class SpotifyInteractor():
             print("No active devices found. Open Spotify and start playing something!")
 
         
-        return self.spotifyGeneral.track(url)['name']
+        return self.spotifyClient.track(url)['name']
 
     def isValidPlaylist(self):
         '''Returns if the URL on line 3 of the settings file is valid'''
@@ -77,7 +108,7 @@ class SpotifyInteractor():
 
         # Tries to fetch the playlist
         try:
-            self.spotifyGeneral.playlist(playlistURL)
+            self.spotifyClient.playlist(playlistURL)
             return True
         except spotipy.exceptions.SpotifyException:
             return False
@@ -102,7 +133,7 @@ class SpotifyInteractor():
         settingsFile.close()
 
         # Creates a list of new songs
-        tracks = self.spotifyGeneral.playlist_tracks(playlistURL)['items']
+        tracks = self.spotifyClient.playlist_tracks(playlistURL)['items']
 
         # Extract track URLs
         newSongs = []
@@ -125,3 +156,25 @@ class SpotifyInteractor():
 
         return uniqueSongs
 
+    def shuffleSongs(self):
+        '''TODO? make this shuffle the songs in songNames'''
+        songNames = open("Config\\songNames", "r")
+        songs = songNames.readlines()
+        songNames.close()
+        
+        random.shuffle(songs)
+
+        songNames = open("Config\\songNames", "w")
+        songNames.writelines(songs)
+        songNames.close()
+
+    def deleteSongFile(self):
+        '''Deleats the SongNames File'''
+        #Deletes the current songNames file
+        open('Config\\songNames', 'w').close()
+    
+
+    
+    def resetRounds(self):
+        '''Resets the rounds'''
+        self.roundNumber = 1

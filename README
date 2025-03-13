@@ -1,2 +1,5 @@
 IMPORTANT: You must run ".\pip install spotipy" and ".\pip install keyboard" in your scripts file before running
 Also the file to run is ValoBeatsMain
+The first round has a preround length of 44 seconds but depending on wifi you migh load in later so for the first round you will press the hotkey when the clock hits 30
+
+For the 12th round the clock starts at 44 seconds so the program keeps track of the round you are on. So at the end of the game, you need to click on the button to reset rounds. 
