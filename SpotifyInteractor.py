@@ -26,7 +26,7 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        self.spotifyClient.devices()
+        # self.spotifyClient.devices()
 
     def hotKeyPressed(self):
         '''Plays a song after a specified time'''
@@ -37,6 +37,7 @@ class SpotifyInteractor():
         songNameFile = open("Config\\songNames", "r")
         songLine = songNameFile.readlines()[self.songNumber]
 
+
         # Gets the string from after the space to before the \n
         if (songLine.find("\n") != -1):
             songTime = float(songLine[songLine.find(" ") + 1 :])
@@ -45,23 +46,61 @@ class SpotifyInteractor():
 
         songNameFile.close()
 
+        # Opening the settings file to get the type of game
+        settingsFile = open("Config\\settings", "r")
+        gameType = settingsFile.readlines()[2][:-1]
+
+        if gameType == "Normal":
+            firstRoundTime = 30.5
+            halfTimeRound = 12
+            halfTimeTime = 44.7
+            normalRoundTime = 29.5
+        elif gameType == "Swift":
+            firstRoundTime = 30.5
+            halfTimeRound = 4
+            halfTimeTime = 44.7
+            normalRoundTime = 29.5
+        elif gameType == "Spike":
+            # todo fix these numbers
+            firstRoundTime = 19.5
+            halfTimeRound = 3
+            halfTimeTime = 19.7
+            normalRoundTime = 19.5
+            
         song_uri = self.convertUrlToUri(songLine[:songLine.find(" ")])
 
-        playTime = 0
+        # After what time to play the song
+        playAfterTime = 0
+        # At what time to start the song
+        playIntoTime = 0
         if self.roundNumber == 1:
             # First round
-            playTime = time.time() + 30.5 - songTime
-        elif self.roundNumber == 12:
+            if songTime > firstRoundTime:
+                playIntoTime = songTime - firstRoundTime
+            else:
+                playAfterTime = time.time() + firstRoundTime - songTime
+        elif self.roundNumber == halfTimeRound:
             # Half time
-            playTime = time.time() + 44.7 - songTime
+            if songTime > halfTimeTime:
+                playIntoTime = songTime - halfTimeTime
+            else:
+                playAfterTime = time.time() + halfTimeTime - songTime
         else:
-            playTime = time.time() + 29.5 - songTime
+            # Normal rounds
+            if songTime > normalRoundTime:
+                playIntoTime = songTime - normalRoundTime
+            else:
+                playAfterTime = time.time() + normalRoundTime - songTime
 
-        while time.time() < playTime:
-            time.sleep(0.02)
-        
-        # Play a song
-        self.spotifyClient.start_playback(device_id = active_device_id, uris = [song_uri])
+        if (playIntoTime == 0):
+            # Wait for play after time
+            while time.time() < playAfterTime:
+                time.sleep(0.02)
+            # Play a song
+            self.spotifyClient.start_playback(device_id = active_device_id, uris = [song_uri])
+        else:
+            # Play a song at an offset
+            self.spotifyClient.start_playback(device_id = active_device_id, uris = [song_uri], position_ms = playIntoTime * 1000)
 
         self.songNumber = self.songNumber + 1
         self.roundNumber = self.roundNumber + 1
@@ -94,7 +133,7 @@ class SpotifyInteractor():
     def isValidPlaylist(self):
         '''Returns if the URL on line 3 of the settings file is valid'''
         settingsFile = open("Config\\settings", "r")
-        playlistURL = settingsFile.readlines()[2]
+        playlistURL = settingsFile.readlines()[3]
         settingsFile.close()
 
         # Tries to fetch the playlist
@@ -120,7 +159,7 @@ class SpotifyInteractor():
         
         # Reads the url from settings
         settingsFile = open("Config\\settings", "r")
-        playlistURL = settingsFile.readlines()[2]
+        playlistURL = settingsFile.readlines()[3]
         settingsFile.close()
 
         # Creates a list of new songs
