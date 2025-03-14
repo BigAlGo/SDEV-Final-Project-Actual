@@ -6,6 +6,7 @@ from tkinter import simpledialog
 import SpotifyInteractor as SI
 
 #todo add a toggle for swift play and spike rush
+#todo add a song name input do be able to switch between songs 
 def createSettingsWindow():
     '''Creates the settings window'''
     #cancel the hotkey
