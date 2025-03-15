@@ -26,17 +26,18 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        # self.spotifyClient.devices()
+        # self.devices = self.spotifyClient.devices()
+        # while not self.devices['devices']:
+            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
 
     def hotKeyPressed(self):
         '''Plays a song after a specified time'''
-        #Opening the current device
-        devices = self.spotifyClient.devices()
-        active_device_id = devices['devices'][0]['id']
-        
+        print("hot key pressed")
+        #Gets the current device
+        active_device_id = self.devices['devices'][0]['id']
+
         songNameFile = open("Config\\songNames", "r")
         songLine = songNameFile.readlines()[self.songNumber]
-
 
         # Gets the string from after the space to before the \n
         if (songLine.find("\n") != -1):
@@ -49,24 +50,27 @@ class SpotifyInteractor():
         # Opening the settings file to get the type of game
         settingsFile = open("Config\\settings", "r")
         gameType = settingsFile.readlines()[2][:-1]
+        settingsFile.close()
 
+        # Offset for calling from wifi
+        wifiOffset = 0.5
         if gameType == "Normal":
-            firstRoundTime = 30.5
-            halfTimeRound = 12
-            halfTimeTime = 44.7
-            normalRoundTime = 29.5
+            firstRoundTime = 31
+            halfTimeRound = 13
+            halfTimeTime = 45
+            normalRoundTime = 30
         elif gameType == "Swift":
-            firstRoundTime = 30.5
-            halfTimeRound = 4
-            halfTimeTime = 44.7
-            normalRoundTime = 29.5
+            firstRoundTime = 31
+            halfTimeRound = 5
+            halfTimeTime = 45
+            normalRoundTime = 30
         elif gameType == "Spike":
             # todo fix these numbers
             firstRoundTime = 19.5
-            halfTimeRound = 3
+            halfTimeRound = 4
             halfTimeTime = 19.7
             normalRoundTime = 19.5
-            
+        
         song_uri = self.convertUrlToUri(songLine[:songLine.find(" ")])
 
         # After what time to play the song
@@ -78,32 +82,36 @@ class SpotifyInteractor():
             if songTime > firstRoundTime:
                 playIntoTime = songTime - firstRoundTime
             else:
-                playAfterTime = time.time() + firstRoundTime - songTime
+                playAfterTime = time.time() + firstRoundTime - songTime - wifiOffset
         elif self.roundNumber == halfTimeRound:
             # Half time
             if songTime > halfTimeTime:
                 playIntoTime = songTime - halfTimeTime
             else:
-                playAfterTime = time.time() + halfTimeTime - songTime
+                playAfterTime = time.time() + halfTimeTime - songTime - wifiOffset
         else:
             # Normal rounds
             if songTime > normalRoundTime:
                 playIntoTime = songTime - normalRoundTime
             else:
-                playAfterTime = time.time() + normalRoundTime - songTime
+                playAfterTime = time.time() + normalRoundTime - songTime - wifiOffset
+
 
         if (playIntoTime == 0):
             # Wait for play after time
+
             while time.time() < playAfterTime:
                 time.sleep(0.02)
             # Play a song
             self.spotifyClient.start_playback(device_id = active_device_id, uris = [song_uri])
         else:
             # Play a song at an offset
-            self.spotifyClient.start_playback(device_id = active_device_id, uris = [song_uri], position_ms = playIntoTime * 1000)
+            self.spotifyClient.start_playback(device_id = active_device_id, uris = [song_uri], position_ms = (playIntoTime - 0.67) * 1000 )
 
         self.songNumber = self.songNumber + 1
         self.roundNumber = self.roundNumber + 1
+        print("played")
+
         
 
     def makeHotKey(self):
@@ -208,7 +216,8 @@ class SpotifyInteractor():
 
     def getDevices(self):
         '''Gets the divices signed into the account'''
-        return self.spotifyClient.devices()
+        self.devices = self.spotifyClient.devices()
+        return self.devices
     
     def getNameOfSong(self, url):
         '''Returns the name of a song given the url'''

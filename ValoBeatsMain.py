@@ -5,7 +5,7 @@ from tkinter import simpledialog
 
 import SpotifyInteractor as SI
 
-#todo add a toggle for swift play and spike rush
+#todo fix the bug of a single line being created at the start of the song names file after clicking clear songs
 #todo add a song name input to be able to switch between songs 
 #todo change the while loop to be an offset in the playback function
 #todo add the ability to save different songNames files
@@ -151,7 +151,7 @@ def saveSettings():
     # Asks What time you want each new song to start at
     songFile = open("Config\\songNames", "a")
     for song in spotifyIntern.getPlaylistLinks():
-        answer = simpledialog.askfloat("Song Timing", "What Time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
+        answer = simpledialog.askfloat("Song Timing", "What time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
         if answer != None:
             songFile.write("\n" + song + " " + str(answer))
     
@@ -217,9 +217,11 @@ def main():
 
     # Creates a button
     settingsButton = Button(mainWindow, text = "Open Settings", command = createSettingsWindow)
+    shuffleButton = Button(mainWindow, text = "Shuffle songs", command = spotifyIntern.shuffleSongs)
 
     # Adds the button to the canvas
-    settingsButtonWindow = mainCanvas.create_window(320, 180, window = settingsButton)
+    settingsButtonWindow = mainCanvas.create_window(320, 200, window = settingsButton)
+    shuffleButtonWindow = mainCanvas.create_window(220, 180, window = shuffleButton)
 
     # Wait for input
     mainWindow.mainloop()
