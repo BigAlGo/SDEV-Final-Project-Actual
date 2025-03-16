@@ -26,15 +26,18 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        # self.devices = self.spotifyClient.devices()
-        # while not self.devices['devices']:
-            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+        self.devices = self.spotifyClient.devices()
+        while not self.devices['devices']:
+            messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
 
     def hotKeyPressed(self):
         '''Plays a song after a specified time'''
-        print("hot key pressed")
+        roundStartTime = time.time()
+        print("song #" + str(self.songNumber))
+        print("round #"+ str(self.roundNumber))
+
         #Gets the current device
-        active_device_id = self.devices['devices'][0]['id']
+        deviceId = self.devices['devices'][0]['id']
 
         songNameFile = open("Config\\songNames", "r")
         songLine = songNameFile.readlines()[self.songNumber]
@@ -53,23 +56,26 @@ class SpotifyInteractor():
         settingsFile.close()
 
         # Offset for calling from wifi
-        wifiOffset = 0.5
+        wifiOffset = 0.45
         if gameType == "Normal":
+            overTimeRound = 25
             firstRoundTime = 31
             halfTimeRound = 13
             halfTimeTime = 45
             normalRoundTime = 30
         elif gameType == "Swift":
+            overTimeRound = 9
             firstRoundTime = 31
             halfTimeRound = 5
             halfTimeTime = 45
             normalRoundTime = 30
         elif gameType == "Spike":
             # todo fix these numbers
-            firstRoundTime = 19.5
+            overTimeRound = 7
+            firstRoundTime = 11
             halfTimeRound = 4
-            halfTimeTime = 19.7
-            normalRoundTime = 19.5
+            halfTimeTime = 20
+            normalRoundTime = 20
         
         song_uri = self.convertUrlToUri(songLine[:songLine.find(" ")])
 
@@ -83,36 +89,80 @@ class SpotifyInteractor():
                 playIntoTime = songTime - firstRoundTime
             else:
                 playAfterTime = time.time() + firstRoundTime - songTime - wifiOffset
-        elif self.roundNumber == halfTimeRound:
-            # Half time
+            print("firs " + str(firstRoundTime + (time.time() - playAfterTime)))
+        elif self.roundNumber == halfTimeRound or self.roundNumber >= overTimeRound:
+            # Half time or over time
             if songTime > halfTimeTime:
                 playIntoTime = songTime - halfTimeTime
             else:
                 playAfterTime = time.time() + halfTimeTime - songTime - wifiOffset
+            print("half " + str(halfTimeTime + (time.time() - playAfterTime)))
         else:
             # Normal rounds
             if songTime > normalRoundTime:
                 playIntoTime = songTime - normalRoundTime
             else:
                 playAfterTime = time.time() + normalRoundTime - songTime - wifiOffset
+            print("norm " + str(normalRoundTime + (time.time() - playAfterTime)))
 
 
         if (playIntoTime == 0):
             # Wait for play after time
-
             while time.time() < playAfterTime:
-                time.sleep(0.02)
+                if self.roundNumber == 1:
+                    # First round
+                    print("firs round " + str(firstRoundTime - (time.time() - roundStartTime)))
+                elif self.roundNumber == halfTimeRound or self.roundNumber >= overTimeRound:
+                    # Half time
+                    print("half round " + str(halfTimeRound - (time.time() - roundStartTime)))
+                else:
+                    # Normal rounds
+                    print("norm round " + str(normalRoundTime - (time.time() - roundStartTime)))
+
+                time.sleep(0.05)
             # Play a song
-            self.spotifyClient.start_playback(device_id = active_device_id, uris = [song_uri])
+            startTime = time.time()
+            self.spotifyClient.start_playback(device_id = deviceId, uris = [song_uri])
         else:
             # Play a song at an offset
-            self.spotifyClient.start_playback(device_id = active_device_id, uris = [song_uri], position_ms = (playIntoTime - 0.67) * 1000 )
+            startTime = time.time()
+            self.spotifyClient.start_playback(device_id = deviceId, uris = [song_uri], position_ms = (playIntoTime - 0.67) * 1000)
+
+        # Repeats the current track
+        self.spotifyClient.repeat("track", device_id=deviceId)
+
+        print("played")
+
+        # Wait for playback to start
+        while True:
+            playback = self.spotifyClient.current_playback()
+            if playback and playback["is_playing"]:
+                break
+            time.sleep(0.05)  # Check every 50ms
+
+        # Stop timing
+        endTime = time.time()
+        delay = endTime - startTime
+        print(delay)
+        printTime = time.time() + songTime
+
+        while time.time() < printTime:
+            if self.roundNumber == 1:
+                # First round
+                print("firs round " + str(firstRoundTime - (time.time() - roundStartTime)))
+            elif self.roundNumber == halfTimeRound or self.roundNumber >= overTimeRound:
+                # Half time
+                print("half round " + str(halfTimeRound - (time.time() - roundStartTime)))
+            else:
+                # Normal rounds
+                print("norm round " + str(normalRoundTime - (time.time() - roundStartTime)))
+            
+            time.sleep(0.1)
+        print("Time for beat drop, RIGHT?")
+        print(normalRoundTime - (time.time() - roundStartTime))
 
         self.songNumber = self.songNumber + 1
         self.roundNumber = self.roundNumber + 1
-        print("played")
-
-        
 
     def makeHotKey(self):
         '''Creates the hotkey based on the config file'''
@@ -195,7 +245,7 @@ class SpotifyInteractor():
         return uniqueSongs
 
     def shuffleSongs(self):
-        '''TODO? make this shuffle the songs in songNames'''
+        '''This shuffles the songs in songNames'''
         songNames = open("Config\\songNames", "r")
         songs = songNames.readlines()
         songNames.close()
@@ -222,6 +272,18 @@ class SpotifyInteractor():
     def getNameOfSong(self, url):
         '''Returns the name of a song given the url'''
         return self.spotifyClient.track(url)['name']
+    
+    def getSongTime(self):
+        playback = self.spotifyClient.current_playback()
+
+        # If somthing is playing
+        if playback:
+            songTime = playback["progress_ms"] / 1000 
+            return songTime
+        else:
+            messagebox.showwarning("Song timing", "No song is currently playing.")
+            return -1
+
 
     def deleteSongFile(self):
         '''Deleats the SongNames File'''

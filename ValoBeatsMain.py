@@ -5,11 +5,12 @@ from tkinter import simpledialog
 
 import SpotifyInteractor as SI
 
+#todo add the ability to save different songNames files
+#todo add overtime support
 #todo fix the bug of a single line being created at the start of the song names file after clicking clear songs
 #todo add a song name input to be able to switch between songs 
 #todo change the while loop to be an offset in the playback function
-#todo add the ability to save different songNames files
-#todo add overtime support
+#todo add a separate window for hotkeys and add more hotkeys
 def createSettingsWindow():
     '''Creates the settings window'''
     # Cancel the hotkey
@@ -145,24 +146,47 @@ def saveSettings():
     
 
     if not spotifyIntern.isValidPlaylist():
-        messagebox.showwarning("WARNING", playListLinkText.get() + " is not a valid playList name, please try again")
+        messagebox.showwarning("WARNING", playListLinkText.get() + " is not a valid public playList name, please try again")
         return
-
-    # Asks What time you want each new song to start at
-    songFile = open("Config\\songNames", "a")
-    for song in spotifyIntern.getPlaylistLinks():
-        answer = simpledialog.askfloat("Song Timing", "What time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
-        if answer != None:
-            songFile.write("\n" + song + " " + str(answer))
-    
-    songFile.close()
-
 
     # Checking if a device is open
     devices = spotifyIntern.getDevices()
     if not devices['devices']:
         messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
         return
+    
+
+    songFile = open("Config\\songNames", "a")
+    
+    # Asks how you want to input the songs
+    if len(spotifyIntern.getPlaylistLinks()) != 0:
+        howAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to use your spotify in your browser set the timing for all the songs?")
+
+    # Asks What time you want each new song to start at
+    for song in spotifyIntern.getPlaylistLinks():
+        if howAnswer == True:
+            # Using browser data
+            correct = False
+            while True:
+                # Loops until we get correct input
+                messagebox.showinfo("Song Timing", "Please go to the time at which you want the song " + spotifyIntern.getNameOfSong(song) + " to start on your device and then click OK")
+                time = spotifyIntern.getSongTime()
+                if (time != -1):
+                    correct = messagebox.askyesnocancel("Song Timeing", "The time you entered is " + str(time) + ". Is this correct?")
+                    if (correct == None or correct == True):
+                        break
+            if correct != None:
+                # Only add the song if they didn't press cancel
+                songFile.write(song + " " + str(time) + "\n")
+
+        elif howAnswer ==  False:
+            # Using manual input
+            timeAnswer = simpledialog.askfloat("Song Timing", "What time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
+            if timeAnswer != None:
+                songFile.write(song + " " + str(timeAnswer) + "\n")
+        
+    songFile.close()
+
 
     settingsWindow.destroy()
 
@@ -225,8 +249,6 @@ def main():
 
     # Wait for input
     mainWindow.mainloop()
-
-
 
 if __name__ == "__main__":
     main()
