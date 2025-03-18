@@ -1,10 +1,11 @@
-import keyboard
-import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
+from tkinter import messagebox
 import time
 import random
-from tkinter import messagebox
+import keyboard
+import spotipy
+import re
 
 
 
@@ -59,13 +60,13 @@ class SpotifyInteractor():
         wifiOffset = 0.45
         if gameType == "Normal":
             overTimeRound = 25
-            firstRoundTime = 31
+            firstRoundTime = 30
             halfTimeRound = 13
             halfTimeTime = 45
             normalRoundTime = 30
         elif gameType == "Swift":
             overTimeRound = 9
-            firstRoundTime = 31
+            firstRoundTime = 30
             halfTimeRound = 5
             halfTimeTime = 45
             normalRoundTime = 30
@@ -256,13 +257,17 @@ class SpotifyInteractor():
         songNames.writelines(songs)
         songNames.close()
 
-    def convertUrlToUri(self, spotify_url):
-        """Extracts track ID from a Spotify URL and converts it into a Spotify URI."""
-        if "track/" in spotify_url:
-            track_id = spotify_url.split("track/")[1].split("?")[0]
-            return "spotify:track:" + track_id
+    def convertUrlToUri(self, spotifyUrl):
+        """Converts from a Spotify URL to a Spotify URI"""
+        if "track/" in spotifyUrl:
+            # For Tracks
+            trackId = spotifyUrl.split("track/")[1].split("?")[0]
+            return "spotify:track:" + trackId
+        elif "playlist/" in spotifyUrl:
+            # For playlists
+            playlistId = spotifyUrl.split("playlist/")[1].split("?")[0]
+            return "spotify:playlist:" + playlistId
         return None
-
 
     def getDevices(self):
         '''Gets the divices signed into the account'''
@@ -272,6 +277,11 @@ class SpotifyInteractor():
     def getNameOfSong(self, url):
         '''Returns the name of a song given the url'''
         return self.spotifyClient.track(url)['name']
+    
+    def getNameofPlaylist(self, uri):
+        '''Returns the name of a song given the uri'''
+        id = uri.split("spotify:playlist:")[1]
+        return self.spotifyClient.playlist(id)['name']
     
     def getSongTime(self):
         playback = self.spotifyClient.current_playback()
@@ -283,7 +293,11 @@ class SpotifyInteractor():
         else:
             messagebox.showwarning("Song timing", "No song is currently playing.")
             return -1
-
+    
+    def sanitizeFilename(name):
+        """Replaces invalid filename characters"""
+        name = name.strip().replace(" ", "_")
+        return re.sub(r'[<>:"/\\|?*]', "_", name)
 
     def deleteSongFile(self):
         '''Deleats the SongNames File'''

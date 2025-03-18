@@ -5,8 +5,11 @@ from tkinter import simpledialog
 
 import SpotifyInteractor as SI
 
-#todo add the ability to save different songNames files
-#todo add overtime support
+# add a master song file which contains every song that you have ever saved
+# add a file for the name of the playlist
+# when they load in a playlist, load all those song into the master, then load all of the new songs into the file with the playlist name with the song times 
+ 
+#todo? add overtime support
 #todo fix the bug of a single line being created at the start of the song names file after clicking clear songs
 #todo add a song name input to be able to switch between songs 
 #todo change the while loop to be an offset in the playback function
@@ -146,7 +149,7 @@ def saveSettings():
     
 
     if not spotifyIntern.isValidPlaylist():
-        messagebox.showwarning("WARNING", playListLinkText.get() + " is not a valid public playList name, please try again")
+        messagebox.showwarning("WARNING", playListLinkText.get() + " is not a valid public playList link, please try again")
         return
 
     # Checking if a device is open
