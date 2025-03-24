@@ -28,6 +28,7 @@ class SpotifyInteractor():
         self.devices = self.spotifyClient.devices()
         while not self.devices['devices']:
             messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+        self.nextSong = None
 
     def hotKeyPressed(self):
         '''Plays a song after a specified time'''
@@ -39,7 +40,11 @@ class SpotifyInteractor():
         deviceId = self.devices['devices'][0]['id']
 
         songNameFile = open("Config\\songNames", "r")
-        songLine = songNameFile.readlines()[self.songNumber]
+        if (self.nextSong == None):
+            songLine = songNameFile.readlines()[self.songNumber]
+        else:
+            songLine = self.nextSong
+            self.nextSong = None
 
         # Gets the string from after the space to before the \n
         if (songLine.find("\n") != -1):
@@ -237,14 +242,6 @@ class SpotifyInteractor():
             if track["track"]:
                 newSongs.append(track["track"]["external_urls"]["spotify"])
     
-        '''for songs from spotify playlist
-            if !song in playlist file 
-                if song in master
-                    write using the master
-                else 
-                    add to uniquer songs
-            
-        '''
         playlistFile = open("Config\\" + playlistFileName, "a")
         masterFile = open("Config\\masterSongFile", "r")
 
@@ -328,15 +325,18 @@ class SpotifyInteractor():
             messagebox.showwarning("Song timing", "No song is currently playing.")
             return -1
     
-    def sanitizeFilename(name):
+    def sanitizeFilename(self, name):
         ''' Replaces invalid filename characters'''
         name = name.strip().replace(" ", "_")
         return re.sub(r'[<>:"/\\|?*]', "_", name)
     
     def playlistURLToFileName(self, url):
-        ''' Converts from url to uri to name to sanitized filename '''
+        '''Converts from url to uri to name to sanitized filename '''
         return self.sanitizeFilename(self.getNameofPlaylist(self.convertUrlToUri(url)))
 
+    def searchForBestSong(self, name):
+        '''Uses spotify's search to look for the 5 best songs'''
+        return self.spotifyClient.search(q = name, type = "track", limit = 5)
 
     def deleteSongFile(self):
         '''Deleats the SongNames File'''
@@ -350,3 +350,7 @@ class SpotifyInteractor():
     def resetRounds(self):
         '''Resets the rounds'''
         self.roundNumber = 1
+    
+    def setNextSong(self, set):
+        '''Sets the next song'''
+        self.nextSong = set

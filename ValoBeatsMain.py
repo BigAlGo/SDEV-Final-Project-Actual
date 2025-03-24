@@ -10,6 +10,7 @@ import SpotifyInteractor as SI
 # when they load in a playlist, load all those song into the master, then load all of the new songs into the file with the playlist name with the song times 
  
 #todo add a song name input to be able to switch between songs: queue-ing songs 
+#todo add color to main screen
 #todo when redoing song times, allow them to choose a certain song to remove
 
 #todo add a separate window for hotkeys and add more hotkeys
@@ -199,6 +200,28 @@ def saveSettings():
 
     settingsWindow.destroy()
 
+def addSongNext():
+    songsFile = open("Songs\\masterSongFile", "r")
+    masterLines = songsFile.readlines()
+
+    masterSongs = []
+    for line in masterLines:
+        masterSongs.append(line[:line.find(" ")])
+
+    for songid in spotifyIntern.searchForBestSong(nextSongText.get()):
+        for masterSong in masterSongs:
+            if songid['name'] == masterSong:
+                # Found in master songs, refind the whole line, then add to playlist file
+                for masterLine in masterFile.readlines():
+                    if masterLine.find(newSong) != -1:
+                        newLine = masterLine
+                        break
+                spotifyIntern.setNextSong(newLine)
+                found = True
+                break
+
+
+
 def remakeSongFile():
     answer = messagebox.askquestion("Confirmation", "Are you sure you want to DELETE ALL saved songs and redo the Song Timing for all the songs in the current playlist?")
     if (answer == "yes"):
@@ -248,14 +271,22 @@ def main():
     # Adds the image to the canvas
     mainCanvas.create_image(0, 0, image = mainImage, anchor = "nw")
 
-    # Creates a button
+    # Stores the next song
+    global nextSongText
+    nextSongText = Entry(mainWindow)
+
+    # Creates buttons
     settingsButton = Button(mainWindow, text = "Open Settings", command = createSettingsWindow)
     shuffleButton = Button(mainWindow, text = "Shuffle songs", command = spotifyIntern.shuffleSongs)
+    searchButton = Button(mainWindow, text = "Add Next Song To Play", command = addSongNext)
 
-    # Adds the button to the canvas
+    # Adds each element to the canvas
+    mainCanvas.create_window(470, 300, window = nextSongText)
+
     settingsButtonWindow = mainCanvas.create_window(320, 200, window = settingsButton)
     shuffleButtonWindow = mainCanvas.create_window(220, 180, window = shuffleButton)
-
+    searchButtonWindow = mainCanvas.create_window(470, 200, window = searchButton)
+    
     # Wait for input
     mainWindow.mainloop()
 
