@@ -7,8 +7,6 @@ import keyboard
 import spotipy
 import re
 
-
-
 class SpotifyInteractor():
     def __init__(self):
         self.makeHotKey()
@@ -202,11 +200,20 @@ class SpotifyInteractor():
         except spotipy.exceptions.SpotifyException:
             return False
 
-    def getPlaylistLinks(self):
-        '''Returns a list of lings to songs that have not been saved but are in the playlist'''        
+    def getPlaylistLinks(self, playlistFileName):
+        '''Returns a list of lings to songs that have not been saved but are in the spotify playlist
+        and writes songs from the master file that are not in the playlist file, to the playlist file'''        
         
         # Creates a list of all the saved songs 
-        songsFile = open("Config\\songNames", "r")
+        songsFile = open("Songs\\masterSongFile", "r")
+        masterLines = songsFile.readlines()
+        songsFile.close()
+
+        masterSongs = []
+        for line in masterLines:
+            masterSongs.append(line[:line.find(" ")])
+
+        songsFile = open("Config\\" + playlistFileName, "r")
         oldLines = songsFile.readlines()
         songsFile.close()
 
@@ -230,18 +237,44 @@ class SpotifyInteractor():
             if track["track"]:
                 newSongs.append(track["track"]["external_urls"]["spotify"])
     
-        
+        '''for songs from spotify playlist
+            if !song in playlist file 
+                if song in master
+                    write using the master
+                else 
+                    add to uniquer songs
+            
+        '''
+        playlistFile = open("Config\\" + playlistFileName, "a")
+        masterFile = open("Config\\masterSongFile", "r")
+
         uniqueSongs = []
-        # Looks through all the new songs and see if it already exists in the old songs
         for newSong in newSongs:
-            found = False
             for oldSong in oldSongs:
                 if newSong == oldSong:
+                    # Already in the playlist file, do nothing
                     found = True
                     break
-            # If new song is not found in old songs, add it to uniqueSongs
+
             if not found:
-                uniqueSongs.append(newSong)
+                # Not in playlist file
+                for masterSong in masterSongs:
+                    if newSong == masterSong:
+                        # Found in master songs, refind the whole line, then add to playlist file
+                        for masterLine in masterFile.readlines():
+                            if masterLine.find(newSong) != -1:
+                                newLine = masterLine
+                                break
+                        playlistFile.write(newLine)
+                        found = True
+                        break
+                
+                if not found:
+                    # Not in master or playlist file, ask what time
+                    uniqueSongs.append(newSong)
+        
+        playlistFile.close()
+        masterFile.close()
 
         return uniqueSongs
 
@@ -284,6 +317,7 @@ class SpotifyInteractor():
         return self.spotifyClient.playlist(id)['name']
     
     def getSongTime(self):
+        ''' Gets the time of the current song playing'''
         playback = self.spotifyClient.current_playback()
 
         # If somthing is playing
@@ -295,9 +329,14 @@ class SpotifyInteractor():
             return -1
     
     def sanitizeFilename(name):
-        """Replaces invalid filename characters"""
+        ''' Replaces invalid filename characters'''
         name = name.strip().replace(" ", "_")
         return re.sub(r'[<>:"/\\|?*]', "_", name)
+    
+    def playlistURLToFileName(self, url):
+        ''' Converts from url to uri to name to sanitized filename '''
+        return self.sanitizeFilename(self.getNameofPlaylist(self.convertUrlToUri(url)))
+
 
     def deleteSongFile(self):
         '''Deleats the SongNames File'''

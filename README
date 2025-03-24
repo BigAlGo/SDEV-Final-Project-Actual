@@ -1,4 +1,4 @@
-IMPORTANT: You must run ".\pip install spotipy" and ".\pip install keyboard" in your scripts file before running
+IMPORTANT: You must run ".\pip install spotipy" ".\pip install keyboard" ".\pip install spotdl", "pip install pygame" in your scripts file before running
 The file to run is ValoBeatsMain
 
 If you get the error "requests.exceptions.SSLError: HTTPSConnectionPool" That means either you dont have internet or the connection was blocked by a firewall

@@ -9,10 +9,9 @@ import SpotifyInteractor as SI
 # add a file for the name of the playlist
 # when they load in a playlist, load all those song into the master, then load all of the new songs into the file with the playlist name with the song times 
  
-#todo? add overtime support
-#todo fix the bug of a single line being created at the start of the song names file after clicking clear songs
-#todo add a song name input to be able to switch between songs 
-#todo change the while loop to be an offset in the playback function
+#todo add a song name input to be able to switch between songs: queue-ing songs 
+#todo when redoing song times, allow them to choose a certain song to remove
+
 #todo add a separate window for hotkeys and add more hotkeys
 def createSettingsWindow():
     '''Creates the settings window'''
@@ -79,7 +78,7 @@ def createSettingsWindow():
     playListLinkText = Entry(settingsWindow, bg = "#eb4454", fg = "#e8fbfb", highlightbackground = "#4f374d")
     
     # Adds the preveious hotkeys to the entry fields
-    if (fileLines[1].find("/,") != -1):
+    if fileLines[1].find("/,") != -1:
         #inserts from 0 to /,
         hotKeyText1.insert(0, fileLines[1][0 : fileLines[1].find("/,")])
         #inserts from /, to end
@@ -139,8 +138,10 @@ def saveSettings():
     # Write the playlist link
     settingsFile.write(playListLinkText.get())
     
+    # End writing the settings
     settingsFile.close()
-    if (not spotifyIntern.makeHotKey()):
+
+    if not spotifyIntern.makeHotKey():
         if len(hotKeyText2.get()) == 0:
             messagebox.showwarning("WARNING", hotKeyText1.get() + " is not a valid hotkey, please try again")
         else:
@@ -159,20 +160,25 @@ def saveSettings():
         return
     
 
-    songFile = open("Config\\songNames", "a")
+    masterSongFile = open("Songs\\masterSongFile", "a")
+
+    # Createing new playlist Song File
+    fileName = spotifyIntern.playlistURLToFileName(playListLinkText.get())
+    playlistSongFile = open("Songs\\" + fileName, "a")
     
     # Asks how you want to input the songs
-    if len(spotifyIntern.getPlaylistLinks()) != 0:
+    uniqueSongs = spotifyIntern.getPlaylistLinks(fileName)
+    if len(uniqueSongs) != 0:
         howAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to use your spotify in your browser set the timing for all the songs?")
 
     # Asks What time you want each new song to start at
-    for song in spotifyIntern.getPlaylistLinks():
+    for song in uniqueSongs:
         if howAnswer == True:
             # Using browser data
             correct = False
             while True:
                 # Loops until we get correct input
-                messagebox.showinfo("Song Timing", "Please go to the time at which you want the song " + spotifyIntern.getNameOfSong(song) + " to start on your device and then click OK")
+                messagebox.showinfo("Song Timing", "Please go to the time at which you want the song " + spotifyIntern.getNameOfSong(song) + " to start on a device and then click OK")
                 time = spotifyIntern.getSongTime()
                 if (time != -1):
                     correct = messagebox.askyesnocancel("Song Timeing", "The time you entered is " + str(time) + ". Is this correct?")
@@ -180,16 +186,16 @@ def saveSettings():
                         break
             if correct != None:
                 # Only add the song if they didn't press cancel
-                songFile.write(song + " " + str(time) + "\n")
+                masterSongFile.write(song + " " + str(time) + "\n")
+                playlistSongFile.write(song + " " + str(time) + "\n")
 
         elif howAnswer ==  False:
             # Using manual input
             timeAnswer = simpledialog.askfloat("Song Timing", "What time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
             if timeAnswer != None:
-                songFile.write(song + " " + str(timeAnswer) + "\n")
+                masterSongFile.write(song + " " + str(timeAnswer) + "\n")
         
-    songFile.close()
-
+    masterSongFile.close()
 
     settingsWindow.destroy()
 
