@@ -16,6 +16,9 @@ import SpotifyInteractor as SI
 #todo add a separate window for hotkeys and add more hotkeys
 def createSettingsWindow():
     '''Creates the settings window'''
+    # Hides main window
+    mainWindow.withdraw()
+
     # Cancel the hotkey
     spotifyIntern.removeHotkeys()
 
@@ -56,15 +59,15 @@ def createSettingsWindow():
     fileLines = settingsFile.readlines()
 
     # Creating the Radio Buttons
-    normalRadio = tk.Radiobutton(settingsCanvas, text = "Unrated/Competitive", variable = radioGameType, value = "Normal", bg = "#4c9ba4")
-    swiftRadio = tk.Radiobutton(settingsCanvas, text = "Swift Play", variable = radioGameType, value = "Swift", bg = "#4c9ba4")
-    spikeRadio = tk.Radiobutton(settingsCanvas, text = "Spike Rush", variable = radioGameType, value = "Spike", bg = "#4c9ba4")
+    normalRadio = tk.Radiobutton(settingsCanvas, text = "Unrated/Competitive", variable = radioGameType, value = "Normal", bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
+    swiftRadio = tk.Radiobutton(settingsCanvas, text = "Swift Play", variable = radioGameType, value = "Swift", bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
+    spikeRadio = tk.Radiobutton(settingsCanvas, text = "Spike Rush", variable = radioGameType, value = "Spike", bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
 
     radioGameType.set(fileLines[2][:-1])
 
     # Creates a scale, a button, and text entry to put on the canvas
     global volumeScale
-    volumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d85965", fg = "#2a3b52", highlightbackground = "#d1656c")
+    volumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d85965", troughcolor = "#4f374d", activebackground = "#d85965", highlightbackground = "#d1656c", highlightcolor= "#000000")
     
 
     # Sets the orginal volume to be the last volume
@@ -74,9 +77,9 @@ def createSettingsWindow():
     global hotKeyText1
     global hotKeyText2
     global playListLinkText
-    hotKeyText1 = Entry(settingsWindow, bg = "#4f374d", fg = "#d1656c", highlightbackground = "#4f374d")
-    hotKeyText2 = Entry(settingsWindow, bg = "#4f374d", fg = "#d1656c", highlightbackground = "#4f374d")
-    playListLinkText = Entry(settingsWindow, bg = "#eb4454", fg = "#e8fbfb", highlightbackground = "#4f374d")
+    hotKeyText1 = Entry(settingsWindow, justify = "center", bg = "#4f374d", fg = "#d1656c")
+    hotKeyText2 = Entry(settingsWindow, justify = "center", bg = "#4f374d", fg = "#d1656c")
+    playListLinkText = Entry(settingsWindow, width = 30, justify = "center", bg = "#eb4454", fg = "#e8fbfb")
     
     # Adds the preveious hotkeys to the entry fields
     if fileLines[1].find("/,") != -1:
@@ -91,8 +94,8 @@ def createSettingsWindow():
 
     settingsFile.close()
 
-    confirmButton = Button(settingsWindow, text = "Save", command = saveSettings, bg = "#4c9ba4")
-    reCreateButton = Button(settingsWindow, text = "Delete All Songs", command = remakeSongFile, bg = "#4c9ba4")
+    confirmButton = Button(settingsWindow, text = "Save", command = saveSettings, bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
+    reCreateButton = Button(settingsWindow, text = "Delete All Songs", command = remakeSongFile, bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
 
     # Adds everything to the canvas
     settingsCanvas.create_window(320, 300, window = volumeScale)
@@ -195,8 +198,11 @@ def saveSettings():
             timeAnswer = simpledialog.askfloat("Song Timing", "What time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
             if timeAnswer != None:
                 masterSongFile.write(song + " " + str(timeAnswer) + "\n")
-        
+                playlistSongFile.write(song + " " + str(time) + "\n")
+
     masterSongFile.close()
+
+    mainWindow.deiconify()
 
     settingsWindow.destroy()
 
@@ -284,20 +290,34 @@ def main():
 
     # Stores the next song
     global nextSongText
-    nextSongText = Entry(mainWindow)
 
     # Creates buttons
-    settingsButton = Button(mainWindow, text = "Open Settings", command = createSettingsWindow)
-    shuffleButton = Button(mainWindow, text = "Shuffle songs", command = spotifyIntern.shuffleSongs)
-    searchButton = Button(mainWindow, text = "Add Next Song To Play", command = addSongNext)
+
+    backGround = "#0f1922"
+    foreGround = "#fe4357"
+
+    activebackground = "#fe4357"
+    activeforeground = "#0f1922"
+    boarderWidth = 0,
+
+    shuffleButton   = Button(mainWindow, text = "Shuffle songs", width = 12, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = spotifyIntern.shuffleSongs)
+    resetRoundsButton = Button(mainWindow, text = "Finish Game", width = 12, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = spotifyIntern.resetRounds)
+
+    searchButton = Button(mainWindow, text = "Add Next Song To Play", width = 18, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = addSongNext)
+    nextSongText = Entry(mainWindow, justify = "center", width = 22, bg = foreGround, fg = backGround)
+
+    settingsButton = Button(mainWindow, text = "Open Settings", bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = createSettingsWindow)
 
     # Adds each element to the canvas
-    mainCanvas.create_window(470, 300, window = nextSongText)
 
-    settingsButtonWindow = mainCanvas.create_window(320, 200, window = settingsButton)
-    shuffleButtonWindow = mainCanvas.create_window(220, 180, window = shuffleButton)
-    searchButtonWindow = mainCanvas.create_window(470, 200, window = searchButton)
-    
+    mainCanvas.create_window(80, 50, window = shuffleButton)
+    mainCanvas.create_window(80, 75, window = resetRoundsButton)
+
+    mainCanvas.create_window(500, 105, window = searchButton)
+    mainCanvas.create_window(500, 126, window = nextSongText)
+
+    mainCanvas.create_window(450, 300, window = settingsButton)
+
     # Wait for input
     mainWindow.mainloop()
 

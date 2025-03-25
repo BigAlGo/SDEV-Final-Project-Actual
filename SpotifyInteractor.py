@@ -25,9 +25,9 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        self.devices = self.spotifyClient.devices()
-        while not self.devices['devices']:
-            messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+        # self.devices = self.spotifyClient.devices()
+        # while not self.devices['devices']:
+            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
         self.nextSong = None
 
     def hotKeyPressed(self):
@@ -47,7 +47,6 @@ class SpotifyInteractor():
             songLine = songNameFile.readlines()[self.songNumber]
         else:
             songLine = self.nextSong
-            self.nextSong = None
 
         # Gets the string from after the space to before the \n
         if (songLine.find("\n") != -1):
@@ -95,21 +94,21 @@ class SpotifyInteractor():
             if songTime > firstRoundTime:
                 playIntoTime = songTime - firstRoundTime
             else:
-                playAfterTime = time.time() + firstRoundTime - songTime - wifiOffset
+                playAfterTime = roundStartTime + firstRoundTime - songTime - wifiOffset
             print("firs " + str(firstRoundTime + (time.time() - playAfterTime)))
         elif self.roundNumber == halfTimeRound or self.roundNumber >= overTimeRound:
             # Half time or over time
             if songTime > halfTimeTime:
                 playIntoTime = songTime - halfTimeTime
             else:
-                playAfterTime = time.time() + halfTimeTime - songTime - wifiOffset
+                playAfterTime = roundStartTime + halfTimeTime - songTime - wifiOffset
             print("half " + str(halfTimeTime + (time.time() - playAfterTime)))
         else:
             # Normal rounds
             if songTime > normalRoundTime:
                 playIntoTime = songTime - normalRoundTime
             else:
-                playAfterTime = time.time() + normalRoundTime - songTime - wifiOffset
+                playAfterTime = roundStartTime + normalRoundTime - songTime - wifiOffset
             print("norm " + str(normalRoundTime + (time.time() - playAfterTime)))
 
 
@@ -121,7 +120,7 @@ class SpotifyInteractor():
                     print("firs round " + str(firstRoundTime - (time.time() - roundStartTime)))
                 elif self.roundNumber == halfTimeRound or self.roundNumber >= overTimeRound:
                     # Half time
-                    print("half round " + str(halfTimeRound - (time.time() - roundStartTime)))
+                    print("half round " + str(halfTimeTime - (time.time() - roundStartTime)))
                 else:
                     # Normal rounds
                     print("norm round " + str(normalRoundTime - (time.time() - roundStartTime)))
@@ -159,7 +158,7 @@ class SpotifyInteractor():
                 print("firs round " + str(firstRoundTime - (time.time() - roundStartTime)))
             elif self.roundNumber == halfTimeRound or self.roundNumber >= overTimeRound:
                 # Half time
-                print("half round " + str(halfTimeRound - (time.time() - roundStartTime)))
+                print("half round " + str(halfTimeTime - (time.time() - roundStartTime)))
             else:
                 # Normal rounds
                 print("norm round " + str(normalRoundTime - (time.time() - roundStartTime)))
@@ -168,7 +167,11 @@ class SpotifyInteractor():
         print("Time for beat drop")
         print(normalRoundTime - (time.time() - roundStartTime))
 
-        self.songNumber = self.songNumber + 1
+        if self.nextSong == None:
+            self.songNumber = self.songNumber + 1
+        else:
+            self.nextSong = None
+        
         self.roundNumber = self.roundNumber + 1
 
     def makeHotKey(self):
