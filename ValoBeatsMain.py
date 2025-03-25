@@ -207,18 +207,29 @@ def addSongNext():
     masterSongs = []
     for line in masterLines:
         masterSongs.append(line[:line.find(" ")])
-
-    for songid in spotifyIntern.searchForBestSong(nextSongText.get()):
+    found = False
+    # Searching for the 
+    for track in spotifyIntern.searchForBestSong(nextSongText.get())["tracks"]["items"]:
         for masterSong in masterSongs:
-            if songid['name'] == masterSong:
+            if track["external_urls"]["spotify"] == masterSong:
                 # Found in master songs, refind the whole line, then add to playlist file
-                for masterLine in masterFile.readlines():
-                    if masterLine.find(newSong) != -1:
+                for masterLine in masterLines:
+                    if masterLine.find(track["external_urls"]["spotify"]) != -1:
                         newLine = masterLine
+                        found = True
                         break
-                spotifyIntern.setNextSong(newLine)
-                found = True
-                break
+                if found:
+                    break
+        if found:
+            break
+    if found:
+        spotifyIntern.setNextSong(newLine)
+        nextSongText.delete(0, "end")
+
+    else:
+        messagebox.showinfo("Search", "No saved song was found using the query: \"" + nextSongText.get() + "\". try narrowing it down by searching with the author as well")
+
+
 
 
 

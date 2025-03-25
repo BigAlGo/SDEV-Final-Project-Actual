@@ -39,7 +39,10 @@ class SpotifyInteractor():
         #Gets the current device
         deviceId = self.devices['devices'][0]['id']
 
-        songNameFile = open("Config\\songNames", "r")
+        fileName = self.getPlaylistFileFromSettings()
+
+        songNameFile = open("Songs\\" + fileName, "r")
+
         if (self.nextSong == None):
             songLine = songNameFile.readlines()[self.songNumber]
         else:
@@ -162,7 +165,7 @@ class SpotifyInteractor():
                 print("norm round " + str(normalRoundTime - (time.time() - roundStartTime)))
             
             time.sleep(0.1)
-        print("Time for beat drop, RIGHT?")
+        print("Time for beat drop")
         print(normalRoundTime - (time.time() - roundStartTime))
 
         self.songNumber = self.songNumber + 1
@@ -218,7 +221,7 @@ class SpotifyInteractor():
         for line in masterLines:
             masterSongs.append(line[:line.find(" ")])
 
-        songsFile = open("Config\\" + playlistFileName, "r")
+        songsFile = open("Songs\\" + playlistFileName, "r")
         oldLines = songsFile.readlines()
         songsFile.close()
 
@@ -241,12 +244,15 @@ class SpotifyInteractor():
         for track in tracks:
             if track["track"]:
                 newSongs.append(track["track"]["external_urls"]["spotify"])
+        
     
-        playlistFile = open("Config\\" + playlistFileName, "a")
-        masterFile = open("Config\\masterSongFile", "r")
+        playlistFile = open("Songs\\" + playlistFileName, "a")
+        masterFile = open("Songs\\masterSongFile", "r")
 
         uniqueSongs = []
+        found = False
         for newSong in newSongs:
+            found = False
             for oldSong in oldSongs:
                 if newSong == oldSong:
                     # Already in the playlist file, do nothing
@@ -258,6 +264,7 @@ class SpotifyInteractor():
                 for masterSong in masterSongs:
                     if newSong == masterSong:
                         # Found in master songs, refind the whole line, then add to playlist file
+                        masterFile.seek(0)
                         for masterLine in masterFile.readlines():
                             if masterLine.find(newSong) != -1:
                                 newLine = masterLine
@@ -272,18 +279,21 @@ class SpotifyInteractor():
         
         playlistFile.close()
         masterFile.close()
-
         return uniqueSongs
 
     def shuffleSongs(self):
         '''This shuffles the songs in songNames'''
-        songNames = open("Config\\songNames", "r")
+        fileName = self.getPlaylistFileFromSettings()
+        songNames = open("Songs\\" + fileName, "r")
+
         songs = songNames.readlines()
         songNames.close()
         
         random.shuffle(songs)
 
-        songNames = open("Config\\songNames", "w")
+        fileName = self.getPlaylistFileFromSettings()
+
+        songNames = open("Songs\\" + fileName, "r")
         songNames.writelines(songs)
         songNames.close()
 
@@ -313,6 +323,12 @@ class SpotifyInteractor():
         id = uri.split("spotify:playlist:")[1]
         return self.spotifyClient.playlist(id)['name']
     
+    def getPlaylistFileFromSettings(self):
+        settingsFile = open("Config\\settings", "r")
+        fileName = self.playlistURLToFileName(settingsFile.readlines()[3])
+        settingsFile.close()
+        return fileName
+    
     def getSongTime(self):
         ''' Gets the time of the current song playing'''
         playback = self.spotifyClient.current_playback()
@@ -335,13 +351,15 @@ class SpotifyInteractor():
         return self.sanitizeFilename(self.getNameofPlaylist(self.convertUrlToUri(url)))
 
     def searchForBestSong(self, name):
-        '''Uses spotify's search to look for the 5 best songs'''
-        return self.spotifyClient.search(q = name, type = "track", limit = 5)
+        '''Uses spotify's search to look for the 20 best songs'''
+        return self.spotifyClient.search(q = name, type = "track", limit = 20)
 
     def deleteSongFile(self):
         '''Deleats the SongNames File'''
         #Deletes the current songNames file
-        open('Config\\songNames', 'w').close()
+        fileName = self.getPlaylistFileFromSettings()
+
+        open("Songs\\" + fileName, "r").close()
     
     def removeHotkeys(self):
         '''Removes any hotkeys'''
