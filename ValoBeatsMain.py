@@ -51,7 +51,7 @@ def createSettingsWindow():
 
     # Adds text to the window
     settingsCanvas.create_text(320, 225, text = "Volume", font = ("Lucida Sans", 30), fill = "#d85965")
-    settingsCanvas.create_text(960, 225, text = "HotKeys", font = ("Lucida Sans", 30), fill = "#2b4055")
+    settingsCanvas.create_text(960, 225, text = "HotKeys", font = ("Lucida Sans", 30), fill = "#72d8cc")
     settingsCanvas.create_text(640, 270, text = "PlayList URL", font = ("Lucida Sans", 30), fill = "#c73d4c")
 
     # Opens the settings file
@@ -73,29 +73,18 @@ def createSettingsWindow():
     # Sets the orginal volume to be the last volume
     volumeScale.set(int(fileLines[0][0:3]))
 
-    # Creates the entry fields for the hotkeys and playlist
-    global hotKeyText1
-    global hotKeyText2
+    # Creates the entry fields for the playlist
     global playListLinkText
-    hotKeyText1 = Entry(settingsWindow, justify = "center", bg = "#4f374d", fg = "#d1656c")
-    hotKeyText2 = Entry(settingsWindow, justify = "center", bg = "#4f374d", fg = "#d1656c")
     playListLinkText = Entry(settingsWindow, width = 30, justify = "center", bg = "#eb4454", fg = "#e8fbfb")
     
-    # Adds the preveious hotkeys to the entry fields
-    if fileLines[1].find("/,") != -1:
-        #inserts from 0 to /,
-        hotKeyText1.insert(0, fileLines[1][0 : fileLines[1].find("/,")])
-        #inserts from /, to end
-        hotKeyText2.insert(0, fileLines[1][fileLines[1].find("/,") + 2 : -1])
-    else:
-        hotKeyText1.insert(0, fileLines[1][:-1])
-
+    # Adds previous playlist to the field
     playListLinkText.insert(0, fileLines[3])
 
     settingsFile.close()
 
     confirmButton = Button(settingsWindow, text = "Save", command = saveSettings, bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
     reCreateButton = Button(settingsWindow, text = "Delete All Songs", command = remakeSongFile, bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
+    openHotkeyWindow = Button(settingsWindow, text = "Open Hotkey Window", command = createHotKeyWindow, bg = "#72d8cc", activebackground = "#000000", activeforeground = "#4c9ba4")
 
     # Adds everything to the canvas
     settingsCanvas.create_window(320, 300, window = volumeScale)
@@ -107,9 +96,71 @@ def createSettingsWindow():
     settingsCanvas.create_window(640, 600, window = confirmButton)
     settingsCanvas.create_window(160, 500, window = reCreateButton)
 
-    settingsCanvas.create_window(960, 285, window = hotKeyText1)
-    settingsCanvas.create_window(960, 305, window = hotKeyText2)
     settingsCanvas.create_window(640, 335, window = playListLinkText)
+    settingsCanvas.create_window(960, 285, window = openHotkeyWindow)
+
+    settingsWindow.bind("<Destroy>", settingsDestroyed) 
+
+def createHotKeyWindow():
+    '''Creates the hotkey window'''
+    global hotkeyWindow
+    hotkeyWindow = tk.Toplevel()
+    hotkeyWindow.title("Hot Keys")
+
+    # Calculates the middle of the screen
+    width = mainWindow.winfo_screenwidth() / 2
+    height = mainWindow.winfo_screenheight() / 2
+
+    # Creates a string of the offset needed to get to the center of the screen
+    oWidth = str(int(width - 540/2))
+    oHeight = str(int(height - 303/2 - 65))
+
+    # Creates size of screen
+    hotkeyWindow.geometry("540x303+" + oWidth + "+" + oHeight)
+
+    hotkeyCanvas = Canvas(hotkeyWindow, width = 540, height = 303)
+    hotkeyCanvas.pack(fill = "both", expand = True)
+
+    # Gets photo from settings
+    global hotkeyImage
+    hotkeyImage = PhotoImage(file = "Images\\HotKeysImage.gif")
+
+    # Adds the image to the canvas
+    hotkeyCanvas.create_image(0, 0, image = hotkeyImage, anchor = "nw")
+    hotkeyCanvas.create_text(255, 225, text = "TEST?", font = ("Lucida Sans", 30), fill = "#d85965")
+
+    # Creates the entry fields for the hotkeys
+    global hotKeyText1
+    global hotKeyText2
+    hotKeyText1 = Entry(settingsWindow, justify = "center", bg = "#4f374d", fg = "#d1656c")
+    hotKeyText2 = Entry(settingsWindow, justify = "center", bg = "#4f374d", fg = "#d1656c")
+
+    # Opens the settings file
+    settingsFile = open("Config\\settings", "r")
+    fileLines = settingsFile.readlines()
+    settingsFile.close()
+
+    # Adds the preveious hotkeys to the entry fields
+    if fileLines[1].find("/,") != -1:
+        #inserts from 0 to /,
+        hotKeyText1.insert(0, fileLines[1][0 : fileLines[1].find("/,")])
+        #inserts from /, to end
+        hotKeyText2.insert(0, fileLines[1][fileLines[1].find("/,") + 2 : -1])
+    else:
+        hotKeyText1.insert(0, fileLines[1][:-1])
+
+    
+    # Adding the elements
+    hotkeyCanvas.create_window(250, 250, window = hotKeyText1)
+    hotkeyCanvas.create_window(250, 300, window = hotKeyText2)
+
+
+def settingsDestroyed(event):
+    '''When the settings window is manually closed and they didnt click save, 
+    reopen the main window and remake the hotkeys'''
+    mainWindow.deiconify()
+    spotifyIntern.makeHotKey()
+
 
 def saveSettings():
     '''opens the settings window to write to'''
@@ -162,7 +213,6 @@ def saveSettings():
     if not devices['devices']:
         messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
         return
-    
 
     masterSongFile = open("Songs\\masterSongFile", "a")
 
@@ -207,6 +257,7 @@ def saveSettings():
     settingsWindow.destroy()
 
 def addSongNext():
+    '''Uses Spotify's search to look through the main file for the song requested, then adds that song to play next'''
     songsFile = open("Songs\\masterSongFile", "r")
     masterLines = songsFile.readlines()
 
@@ -231,13 +282,8 @@ def addSongNext():
     if found:
         spotifyIntern.setNextSong(newLine)
         nextSongText.delete(0, "end")
-
     else:
         messagebox.showinfo("Search", "No saved song was found using the query: \"" + nextSongText.get() + "\". try narrowing it down by searching with the author as well")
-
-
-
-
 
 def remakeSongFile():
     answer = messagebox.askquestion("Confirmation", "Are you sure you want to DELETE ALL saved songs and redo the Song Timing for all the songs in the current playlist?")
@@ -247,8 +293,6 @@ def remakeSongFile():
 
 def main():
     '''Main Function creates the main window'''
-    # For later
-    global radioGameType
     '''Config file is formatted so that the 
     First line is the volume
     Second line is the hotkey
@@ -262,9 +306,11 @@ def main():
     # Creates main window
     global mainWindow
     mainWindow = tk.Tk()
-    # For later
-    radioGameType = tk.StringVar()
+    # mainWindow.overrideredirect(1) # If I dont want a window boarder, but it also doent make a moveable window 
 
+    # For later
+    global radioGameType
+    radioGameType = tk.StringVar()
 
     # Calculates the middle of the screen
     width = mainWindow.winfo_screenwidth() / 2
