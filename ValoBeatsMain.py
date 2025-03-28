@@ -5,12 +5,7 @@ from tkinter import simpledialog
 
 import SpotifyInteractor as SI
 
-# add a master song file which contains every song that you have ever saved
-# add a file for the name of the playlist
-# when they load in a playlist, load all those song into the master, then load all of the new songs into the file with the playlist name with the song times 
- 
-#todo add a song name input to be able to switch between songs: queue-ing songs 
-#todo add color to main screen
+#todo add a hotkey for turning the music down 
 #todo when redoing song times, allow them to choose a certain song to remove
 
 #todo add a separate window for hotkeys and add more hotkeys

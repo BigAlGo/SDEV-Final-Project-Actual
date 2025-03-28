@@ -31,7 +31,7 @@ class SpotifyInteractor():
         self.nextSong = None
 
     def hotKeyPressed(self):
-            """Plays a song after a specified time, with improved accuracy."""
+            """Plays a song after a specified time"""
 
             round_start_time = time.monotonic()
             print("song #" + str(self.songNumber))
