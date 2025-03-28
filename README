@@ -5,7 +5,7 @@ IMPORTANT: You must run
 .\pip install spotdl # For downloading music
 .\pip install pygame # For Music playing (not implemented)
 .\pip install opencv-python # For image prossesing
-.\pip intall mss # For screen capture
+.\pip install mss # For screen capture
 
 in your scripts file before running
 The file to run is ValoBeatsMain
