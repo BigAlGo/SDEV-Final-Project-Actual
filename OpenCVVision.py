@@ -10,6 +10,7 @@ class OpenCVVision():
         self.screenHeight = screenHeight
         self.captureRegion = {"top" : int(11.5/100 * screenHeight), "left" : int(27.0/64.0 * screenWidth), "width" : int(10.0/64.0 * screenWidth), "height" : int(3.0/20.0 * screenHeight)}
         # Stores the x, y, w, h for each letter in the win/loss word
+        # Look for one of these then switch to unlimited fps 
         self.wonArrays = [[9.37, 3.53, 1.83, 6.38], [7.25, 3.39, 1.90, 6.64], [4.32, 3.39, 2.78, 6.51]]
         self.lossArrays = [[9.74, 3.39, 1.61, 6.51], [7.83, 3.39, 1.68, 6.51], [5.71, 3.39, 1.83, 6.51], [4.32, 3.39, 1.17, 6.51]]
         self.clutchArrays = [[11.46, 5.09, 1.93, 6.67], [7.71, 5.09, 1.67, 6.67], [5.68, 5.09, 1.93, 6.67], [4.22, 5.09, 1.30, 6.57], [9.43, 5.00, 1.88, 6.85], [2.24, 4.91, 1.82, 6.76]]
@@ -17,6 +18,8 @@ class OpenCVVision():
         self.ace = [[9.11, 5.19, 1.35, 6.48], [5.05, 5.19, 1.82, 6.39], [7.08, 5.09, 1.77, 6.57]]
         self.flawless = [[10.68, 5.74, 1.41, 5.09], [12.29, 5.65, 1.35, 5.19], [9.38, 5.65, 1.15, 5.19], [8.23, 5.65, 1.04, 5.19], [5.89, 5.65, 2.24, 5.19], [4.27, 5.65, 1.51, 5.28], [3.18, 5.65, 0.99, 5.19], [1.93, 5.65, 1.04, 5.19]]
         self.thrifty = [[12.03, 5.00, 1.82, 6.48], [10.31, 5.00, 1.61, 6.48], [8.85, 5.00, 1.30, 6.48], [7.86, 5.00, 0.73, 6.48], [5.83, 5.00, 1.77, 6.48], [3.75, 5.00, 1.82, 6.48], [2.03, 5.00, 1.51, 6.48]]
+        # Then look for buy phase and then play and switch back to 1 fps
+        self.buyPhase
 
         self.lastRoundEnd = False
         self.roundEndTime = 0
@@ -124,7 +127,7 @@ class OpenCVVision():
                 
                 # Once 1 second after the banner has disappeared
                 if not roundEnd and time.time() > self.roundEndTime + 1 and time.time() < self.roundEndTime + 2:
-                    startMusic(self.lastWon)
+                    startMusic(True )
                     self.lastRoundEnd = False
                     self.roundEndTime = 0
 
@@ -201,7 +204,7 @@ class OpenCVVision():
                     self.roundEndTime = time.time()
                 
                 if not (roundEnd) and time.time() > self.roundEndTime + 1 and time.time() < self.roundEndTime + 2:
-                    startMusic(self.lastWon)
+                    startMusic(False)
                     self.lastRoundEnd = False
                     cv2.imwrite('roundEnd.png', img)
                     self.roundEndTime = 0
