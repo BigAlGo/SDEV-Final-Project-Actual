@@ -5,10 +5,12 @@ from tkinter import simpledialog
 
 import SpotifyInteractor as SI
 
-#todo add a hotkey for turning the music down 
+#todo add local playing as online playing isnt accurate enough 
+#todo all the hotkeys that go with local playing such as turning the music down 
 #todo when redoing song times, allow them to choose a certain song to remove
 
 #todo add a separate window for hotkeys and add more hotkeys
+#todo add the ability to loop through the playlist song file 
 def createSettingsWindow():
     '''Creates the settings window'''
     # Hides main window
@@ -295,13 +297,14 @@ def main():
     Forth line is the playlist url
     '''
 
-    # Creates a spotify intern
-    global spotifyIntern
-    spotifyIntern = SI.SpotifyInteractor()
     # Creates main window
     global mainWindow
     mainWindow = tk.Tk()
     # mainWindow.overrideredirect(1) # If I dont want a window boarder, but it also doent make a moveable window 
+
+    # Creates a spotify intern
+    global spotifyIntern
+    spotifyIntern = SI.SpotifyInteractor(mainWindow.winfo_screenwidth(), mainWindow.winfo_screenheight())
 
     # For later
     global radioGameType

@@ -6,9 +6,14 @@ import random
 import keyboard
 import spotipy
 import re
+import threading
+
+import OpenCVVision as OpenCv
 
 class SpotifyInteractor():
-    def __init__(self):
+    def __init__(self, screenWidth, screenHeight):
+        self.vision = OpenCv.OpenCVVision(screenWidth, screenHeight, self.roundStart)
+
         self.makeHotKey()
         self.songNumber = 0
         self.roundNumber = 1
@@ -25,122 +30,152 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        # self.devices = self.spotifyClient.devices()
-        # while not self.devices['devices']:
-            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+        self.devices = self.spotifyClient.devices()
+        while not self.devices['devices']:
+            messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+            self.devices = self.spotifyClient.devices()
         self.nextSong = None
+        self.roundLoop = False
 
-    def hotKeyPressed(self):
-            """Plays a song after a specified time"""
+    def roundStartHotKeyPressed(self):
+        print("Button pressed")
+        self.startRoundLoop()
 
-            round_start_time = time.monotonic()
-            print("song #" + str(self.songNumber))
-            print("round #" + str(self.roundNumber))
+    def startRoundLoop(self):
+        if not self.roundLoop:
+            self.roundLoop = True
+            self.vision.startLoop()
+            threading.Thread(target=self.roundStart, daemon=True).start()
+            print("thread start")
 
-            # Get the current device
-            device_id = self.devices['devices'][0]['id']
 
-            # Get the playlist file
-            file_name = self.getPlaylistFileFromSettings()
-            with open("Songs\\" + file_name, "r") as song_file:
-                if self.nextSong is None:
-                    song_line = song_file.readlines()[self.songNumber]
-                else:
-                    song_line = self.nextSong
+    def stopRoundLoop(self):
+        self.roundLoop = False
+        self.vision.stopLoop()
 
-            # Extract song time from the song line
-            song_time = float(song_line.split(" ")[-1].strip())
+    def roundStart(self):
+        """Plays a song after a specified time"""
+        print("roundStart")
+        # I am in a thread so while loops don't affect the over all program
 
-            # Determine game type
-            with open("Config\\settings", "r") as settings_file:
-                game_type = settings_file.readlines()[2].strip()
+        round_start_time = time.monotonic()
+        print("song #" + str(self.songNumber))
+        print("round #" + str(self.roundNumber))
 
-            # Adjust round timing based on game type
-            wifi_offset = 0.2  # Reduced offset for better accuracy
-            round_times = {
-                "Normal": (30, 13, 45, 30, 25),
-                "Swift": (30, 5, 45, 30, 9),
-                "Spike": (11, 4, 20, 20, 7)
-            }
-            first_round_time, half_time_round, half_time_time, normal_round_time, over_time_round = round_times.get(game_type, (30, 13, 45, 30, 25))
+        # Get the current device
+        device_id = self.devices['devices'][0]['id']
 
-            song_uri = self.convertUrlToUri(song_line.split(" ")[0])
-
-            # Determine when to play the song
-            play_after_time = round_start_time
-            play_into_time = 0
-
-            if self.roundNumber == 1:
-                if song_time > first_round_time:
-                    play_into_time = song_time - first_round_time
-                else:
-                    play_after_time += first_round_time - song_time - wifi_offset
-                print("First round, song starts in:", first_round_time - (time.monotonic() - round_start_time))
-            elif self.roundNumber == half_time_round or self.roundNumber >= over_time_round:
-                if song_time > half_time_time:
-                    play_into_time = song_time - half_time_time
-                else:
-                    play_after_time += half_time_time - song_time - wifi_offset
-                print("Half-time round, song starts in:", half_time_time - (time.monotonic() - round_start_time))
+        # Get the playlist file
+        file_name = self.getPlaylistFileFromSettings()
+        with open("Songs\\" + file_name, "r") as song_file:
+            if self.nextSong is None:
+                song_line = song_file.readlines()[self.songNumber]
             else:
-                if song_time > normal_round_time:
-                    play_into_time = song_time - normal_round_time
-                else:
-                    play_after_time += normal_round_time - song_time - wifi_offset
-                print("Normal round, song starts in:", normal_round_time - (time.monotonic() - round_start_time))
+                song_line = self.nextSong
 
-            # Ensure play_after_time is in the future
-            if time.monotonic() > play_after_time:
-                print("Warning: play_after_time has already passed!")
-                play_after_time = time.monotonic() + 0.1  # Small delay to avoid immediate playback
+        # Extract song time from the song line
+        song_time = float(song_line.split(" ")[-1].strip())
 
-            if play_into_time == 0:
-                # Wait for play_after_time
-                while time.monotonic() < play_after_time:
-                    print(f"Waiting... {play_after_time - time.monotonic():.2f} seconds left")
-                    time.sleep(0.05)
+        # Determine game type
+        with open("Config\\settings", "r") as settings_file:
+            game_type = settings_file.readlines()[2].strip()
 
-                # Start playback
-                start_time = time.monotonic()
-                self.spotifyClient.start_playback(device_id = device_id, uris = [song_uri])
+        # Adjust round timing based on game type
+        wifi_offset = 0.5
+        round_times = {
+            "Normal": (30, 13, 45, 30, 25),
+            "Swift": (30, 5, 45, 30, 9),
+            "Spike": (11, 4, 20, 20, 7)
+        }
+        first_round_time, half_time_round, half_time_time, normal_round_time, over_time_round = round_times.get(game_type, (30, 13, 45, 30, 25))
+
+        song_uri = self.convertUrlToUri(song_line.split(" ")[0])
+
+        # Determine when to play the song
+        play_after_time = round_start_time
+        play_into_time = 0
+
+        if self.roundNumber == 1:
+            if song_time > first_round_time:
+                play_into_time = song_time - first_round_time
             else:
-                # Start playback with offset
-                start_time = time.monotonic()
-                self.spotifyClient.start_playback(device_id = device_id, uris = [song_uri], position_ms = int((play_into_time - 0.67) * 1000))
+                play_after_time += first_round_time - song_time - wifi_offset
+            print("First round, song starts in:", first_round_time - (time.monotonic() - round_start_time))
+        elif self.roundNumber == half_time_round or self.roundNumber >= over_time_round:
+            if song_time > half_time_time:
+                play_into_time = song_time - half_time_time
+            else:
+                play_after_time += half_time_time - song_time - wifi_offset
+            print("Half-time round, song starts in:", half_time_time - (time.monotonic() - round_start_time))
+        else:
+            if song_time > normal_round_time:
+                play_into_time = song_time - normal_round_time
+            else:
+                play_after_time += normal_round_time - song_time - wifi_offset
+            print("Normal round, song starts in:", normal_round_time - (time.monotonic() - round_start_time))
 
-            # Repeat track
-            self.spotifyClient.repeat("track", device_id = device_id)
+        # Ensure play_after_time is in the future
+        if time.monotonic() > play_after_time:
+            print("Warning: play_after_time has already passed!")
+            play_after_time = time.monotonic() + 0.1  # Small delay to avoid immediate playback
 
-            print("Playback started, waiting for confirmation...")
-
-            # Wait for playback confirmation
-            while True:
-                playback = self.spotifyClient.current_playback()
-                if playback and playback["is_playing"]:
-                    actual_start_time = time.monotonic()
-                    break
+        if play_into_time == 0:
+            # Wait for play_after_time
+            while time.monotonic() < play_after_time and self.roundLoop:
+                print(f"Waiting... {play_after_time - time.monotonic():.2f} seconds left")
                 time.sleep(0.05)
 
-            # Calculate actual delay
-            delay = actual_start_time - start_time
-            print(f"Actual playback delay: {delay:.3f} seconds")
+            # Start playback
+            start_time = time.monotonic()
+            self.spotifyClient.start_playback(device_id = device_id, uris = [song_uri])
+        else:
+            # Start playback with offset
+            start_time = time.monotonic()
+            self.spotifyClient.start_playback(device_id = device_id, uris = [song_uri], position_ms = int((play_into_time - 0.67) * 1000))
 
-            # Wait until beat drop
-            print_time = time.monotonic() + song_time
-            while time.monotonic() < print_time:
-                remaining_time = print_time - time.monotonic()
-                print(f"Time until beat drop: {remaining_time:.2f} seconds")
-                time.sleep(0.1)
+        # Repeat track
+        self.spotifyClient.repeat("track", device_id = device_id)
 
-            print("Time for beat drop!")
+        print("Playback started, waiting for confirmation...")
 
-            # Update song number
-            if self.nextSong is None:
-                self.songNumber += 1
-            else:
-                self.nextSong = None
+        # Wait for playback confirmation
+        while self.roundLoop:
+            playback = self.spotifyClient.current_playback()
+            if playback and playback["is_playing"]:
+                actual_start_time = time.monotonic()
+                break
+            time.sleep(0.05)
 
-            self.roundNumber += 1
+        if not self.roundLoop:
+            actual_start_time = time.monotonic()
+        # Calculate actual delay
+        delay = actual_start_time - start_time
+        print(f"Actual playback delay: {delay:.3f} seconds")
+
+        # Wait until beat drop
+        print_time = time.monotonic() + song_time
+        while time.monotonic() < print_time and self.roundLoop:
+            remaining_time = print_time - time.monotonic()
+            print(f"Time until beat drop: {remaining_time:.2f} seconds")
+            time.sleep(0.1)
+
+        print("Time for beat drop!")
+        # Making sure the text is off screen before running vision
+        time.sleep(0.5)
+
+        # Update song number
+        if self.nextSong is None:
+            self.songNumber += 1
+        else:
+            self.nextSong = None
+
+        self.roundNumber += 1
+        
+        if self.roundLoop:
+            # I am still in a thread so while loops don't affect the over all program
+            self.vision.mainLoop()
+        else:
+            self.resetRounds()
 
     def makeHotKey(self):
         '''Creates the hotkey based on the config file'''
@@ -148,6 +183,7 @@ class SpotifyInteractor():
         fileLines = settingsFile.readlines()
         settingsFile.close()
 
+        keyboard.add_hotkey("f4", callback = self.stopRoundLoop)
 
         if fileLines[1].find("/,") != -1:
             # Finds the hotkeys
@@ -155,13 +191,13 @@ class SpotifyInteractor():
             hotkey2 = fileLines[1][fileLines[1].find("/,") + 2 :-1]
             # If add hotkey fails, return false
             try:
-                keyboard.add_hotkey(hotkey1 + "+" + hotkey2, callback = self.hotKeyPressed)
+                keyboard.add_hotkey(hotkey1 + "+" + hotkey2, callback = self.roundStartHotKeyPressed)
                 return True
             except (ValueError):
                 return False
         else:
             try:
-                keyboard.add_hotkey(fileLines[1][:-1], callback = self.hotKeyPressed)
+                keyboard.add_hotkey(fileLines[1][:-1], callback = self.roundStartHotKeyPressed)
                 return True
             except ValueError:
                 return False
