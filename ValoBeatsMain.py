@@ -6,6 +6,7 @@ from tkinter import simpledialog
 import SpotifyInteractor as SI
 
 #todo add local playing as online playing isnt accurate enough 
+#   Name files the id of the link
 #todo all the hotkeys that go with local playing such as turning the music down 
 #todo when redoing song times, allow them to choose a certain song to remove
 
@@ -60,15 +61,18 @@ def createSettingsWindow():
     swiftRadio = tk.Radiobutton(settingsCanvas, text = "Swift Play", variable = radioGameType, value = "Swift", bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
     spikeRadio = tk.Radiobutton(settingsCanvas, text = "Spike Rush", variable = radioGameType, value = "Spike", bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
 
-    radioGameType.set(fileLines[2][:-1])
+    radioGameType.set(fileLines[1][:-1])
 
     # Creates a scale, a button, and text entry to put on the canvas
-    global volumeScale
-    volumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d85965", troughcolor = "#4f374d", activebackground = "#d85965", highlightbackground = "#d1656c", highlightcolor= "#000000")
-    
+    global loudVolumeScale
+    global quietVolumeScale
+    loudVolumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d85965", troughcolor = "#4f374d", activebackground = "#d85965", highlightbackground = "#d1656c", highlightcolor= "#000000")
+    quietVolumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d85965", troughcolor = "#4f374d", activebackground = "#d85965", highlightbackground = "#d1656c", highlightcolor= "#000000")
+
 
     # Sets the orginal volume to be the last volume
-    volumeScale.set(int(fileLines[0][0:3]))
+    loudVolumeScale.set(int(fileLines[0][0:3]))
+    quietVolumeScale.set(int(fileLines[0][3:5]))
 
     # Creates the entry fields for the playlist
     global playListLinkText
@@ -84,7 +88,8 @@ def createSettingsWindow():
     openHotkeyWindow = Button(settingsWindow, text = "Open Hotkey Window", command = createHotKeyWindow, bg = "#72d8cc", activebackground = "#000000", activeforeground = "#4c9ba4")
 
     # Adds everything to the canvas
-    settingsCanvas.create_window(320, 300, window = volumeScale)
+    settingsCanvas.create_window(320, 300, window = loudVolumeScale)
+    settingsCanvas.create_window(320, 350, window = quietVolumeScale)
 
     settingsCanvas.create_window(1120, 470, window = normalRadio)
     settingsCanvas.create_window(1120, 500, window = swiftRadio)
@@ -124,33 +129,54 @@ def createHotKeyWindow():
 
     # Adds the image to the canvas
     hotkeyCanvas.create_image(0, 0, image = hotkeyImage, anchor = "nw")
-    hotkeyCanvas.create_text(255, 225, text = "TEST?", font = ("Lucida Sans", 30), fill = "#d85965")
 
-    # Creates the entry fields for the hotkeys
-    global hotKeyText1
-    global hotKeyText2
-    hotKeyText1 = Entry(settingsWindow, justify = "center", bg = "#4f374d", fg = "#d1656c")
-    hotKeyText2 = Entry(settingsWindow, justify = "center", bg = "#4f374d", fg = "#d1656c")
+    global playKeyText
+    global endKeyText
+    global lowKeyText
+    global highKeyText
+    global pauseKeyText
+
+    # Creates the entry fields for the hotkeys    
+    playKeyText =  Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
+    endKeyText =   Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
+    lowKeyText =   Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
+    highKeyText =  Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
+    pauseKeyText = Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
+
+    saveButton = Button(hotkeyWindow, text = "Save", command = saveHotKeys, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
 
     # Opens the settings file
-    settingsFile = open("Config\\settings", "r")
+    settingsFile = open("Config\\hotkeys", "r")
     fileLines = settingsFile.readlines()
     settingsFile.close()
 
-    # Adds the preveious hotkeys to the entry fields
-    if fileLines[1].find("/,") != -1:
-        #inserts from 0 to /,
-        hotKeyText1.insert(0, fileLines[1][0 : fileLines[1].find("/,")])
-        #inserts from /, to end
-        hotKeyText2.insert(0, fileLines[1][fileLines[1].find("/,") + 2 : -1])
-    else:
-        hotKeyText1.insert(0, fileLines[1][:-1])
+    playKey = fileLines[0][:-1]        
+    endKey = fileLines[1][:-1]
+    lowKey = fileLines[2][:-1]
+    highKey = fileLines[3][:-1]
+    pauseKey = fileLines[4][:-1]
 
+    # Adding the hotkeys to the entry
+    playKeyText.insert(0, playKey)
+    endKeyText.insert(0, endKey)
+    lowKeyText.insert(0, lowKey)
+    highKeyText.insert(0, highKey)
+    pauseKeyText.insert(0, pauseKey)
     
     # Adding the elements
-    hotkeyCanvas.create_window(250, 250, window = hotKeyText1)
-    hotkeyCanvas.create_window(250, 300, window = hotKeyText2)
+    hotkeyCanvas.create_text(50, 50, justify = "center", text = "Play Hotkey")
+    hotkeyCanvas.create_text(170, 50, justify = "center", text = "End Game Hotkey")
+    hotkeyCanvas.create_text(290, 50, justify = "center", text = "Volume Down Hotkey")
+    hotkeyCanvas.create_text(105, 150, justify = "center", text = "Volume Up Hotkey")
+    hotkeyCanvas.create_text(235, 150, justify = "center", text = "Pause Hotkey")
 
+    hotkeyCanvas.create_window(50, 70, window = playKeyText)
+    hotkeyCanvas.create_window(170, 70, window = endKeyText)
+    hotkeyCanvas.create_window(290, 70, window = lowKeyText)
+    hotkeyCanvas.create_window(105, 170, window = highKeyText)
+    hotkeyCanvas.create_window(235, 170, window = pauseKeyText)
+
+    hotkeyCanvas.create_window(270, 250, window = saveButton)
 
 def settingsDestroyed(event):
     '''When the settings window is manually closed and they didnt click save, 
@@ -160,29 +186,24 @@ def settingsDestroyed(event):
 
 
 def saveSettings():
-    '''opens the settings window to write to'''
+    '''Saves the settings to the file'''
 
     settingsFile = open("Config\\settings", "w")
 
     # Writing volume in correct format
-    if (volumeScale.get() < 10):
-        settingsFile.write("00" + str(volumeScale.get()) + "\n")
-    elif (volumeScale.get() < 100):
-        settingsFile.write("0" + str(volumeScale.get()) + "\n")
+    if (loudVolumeScale.get() < 10):
+        settingsFile.write("00" + str(loudVolumeScale.get()))
+    elif (loudVolumeScale.get() < 100):
+        settingsFile.write("0" + str(loudVolumeScale.get()))
     else:
-        settingsFile.write(str(volumeScale.get()) + "\n")
+        settingsFile.write(str(loudVolumeScale.get()))
 
-    # If nothing entered
-    if len(hotKeyText1.get()) == 0:
-        messagebox.showwarning("WARNING", "Please enter a valid key into the first box")
-        settingsFile.close()
-        return
-
-    # If nothing entered in 2nd box
-    if len(hotKeyText2.get()) == 0:
-        settingsFile.write(hotKeyText1.get() + "\n")
+    if (quietVolumeScale.get() < 10):
+        settingsFile.write("00" + str(quietVolumeScale.get()) + "\n")
+    elif (quietVolumeScale.get() < 100):
+        settingsFile.write("0" + str(quietVolumeScale.get()) + "\n")
     else:
-        settingsFile.write(hotKeyText1.get() + "/," + hotKeyText2.get() + "\n")
+        settingsFile.write(str(quietVolumeScale.get()) + "\n")
 
     # Write the game type
     settingsFile.write(radioGameType.get() + "\n")
@@ -192,14 +213,6 @@ def saveSettings():
     
     # End writing the settings
     settingsFile.close()
-
-    if not spotifyIntern.makeHotKey():
-        if len(hotKeyText2.get()) == 0:
-            messagebox.showwarning("WARNING", hotKeyText1.get() + " is not a valid hotkey, please try again")
-        else:
-            messagebox.showwarning("WARNING", hotKeyText1.get() + " or " + hotKeyText2.get() + " is not a valid hotkey, please try again")
-        return
-    
 
     if not spotifyIntern.isValidPlaylist():
         messagebox.showwarning("WARNING", playListLinkText.get() + " is not a valid public playList link, please try again")
@@ -252,6 +265,23 @@ def saveSettings():
     mainWindow.deiconify()
 
     settingsWindow.destroy()
+
+def saveHotKeys():
+    '''Saves the hotkeys to the file'''
+    settingsFile = open("Config\\hotkeys", "w")
+
+    # Writing the hotkeys to the file
+    settingsFile.write(playKeyText.get() + "\n")
+    settingsFile.write(endKeyText.get() + "\n")
+    settingsFile.write(lowKeyText.get() + "\n")
+    settingsFile.write(highKeyText.get() + "\n")
+    settingsFile.write(pauseKeyText.get() + "\n")
+
+    settingsFile.close()
+
+    spotifyIntern.makeHotKeys()
+
+    hotkeyWindow.destroy()
 
 def addSongNext():
     '''Uses Spotify's search to look through the main file for the song requested, then adds that song to play next'''

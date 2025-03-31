@@ -14,7 +14,7 @@ class SpotifyInteractor():
     def __init__(self, screenWidth, screenHeight):
         self.vision = OpenCv.OpenCVVision(screenWidth, screenHeight, self.roundStart)
 
-        self.makeHotKey()
+        self.makeHotKeys()
         self.songNumber = 0
         self.roundNumber = 1
 
@@ -30,10 +30,10 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        self.devices = self.spotifyClient.devices()
-        while not self.devices['devices']:
-            messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
-            self.devices = self.spotifyClient.devices()
+        # self.devices = self.spotifyClient.devices()
+        # while not self.devices['devices']:
+            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+            # self.devices = self.spotifyClient.devices()
         self.nextSong = None
         self.roundLoop = False
 
@@ -77,8 +77,9 @@ class SpotifyInteractor():
         song_time = float(song_line.split(" ")[-1].strip())
 
         # Determine game type
-        with open("Config\\settings", "r") as settings_file:
-            game_type = settings_file.readlines()[2].strip()
+        file = open("Config\\settings", "r")
+        game_type = file.readlines()[1].strip()
+        file.close()
 
         # Adjust round timing based on game type
         wifi_offset = 0.5
@@ -177,35 +178,33 @@ class SpotifyInteractor():
         else:
             self.resetRounds()
 
-    def makeHotKey(self):
-        '''Creates the hotkey based on the config file'''
-        settingsFile = open("Config\\settings", "r")
+    def makeHotKeys(self):
+        '''Creates the hotkeys based on the hotKeys file'''
+        settingsFile = open("Config\\hotKeys", "r")
         fileLines = settingsFile.readlines()
         settingsFile.close()
 
-        keyboard.add_hotkey("f4", callback = self.stopRoundLoop)
+        playKey = fileLines[0][:-1]
+        endKey = fileLines[1][:-1]
+        lowKey = fileLines[2][:-1]
+        highKey = fileLines[3][:-1]
+        pauseKey = fileLines[4][:-1]
 
-        if fileLines[1].find("/,") != -1:
-            # Finds the hotkeys
-            hotkey1 = fileLines[1][0 : fileLines[1].find("/,")]
-            hotkey2 = fileLines[1][fileLines[1].find("/,") + 2 :-1]
-            # If add hotkey fails, return false
-            try:
-                keyboard.add_hotkey(hotkey1 + "+" + hotkey2, callback = self.roundStartHotKeyPressed)
-                return True
-            except (ValueError):
-                return False
-        else:
-            try:
-                keyboard.add_hotkey(fileLines[1][:-1], callback = self.roundStartHotKeyPressed)
-                return True
-            except ValueError:
-                return False
+        try:
+            keyboard.add_hotkey(playKey, callback = self.roundStartHotKeyPressed)
+            keyboard.add_hotkey(endKey, callback = self.stopRoundLoop)
+            keyboard.add_hotkey(lowKey, callback = lambda: print("lowKey"))
+            keyboard.add_hotkey(highKey, callback = lambda: print("highKey"))
+            keyboard.add_hotkey(pauseKey, callback = lambda: print("pauseKey"))
+
+            return True
+        except (ValueError):
+            return False
 
     def isValidPlaylist(self):
         '''Returns if the URL on line 3 of the settings file is valid'''
         settingsFile = open("Config\\settings", "r")
-        playlistURL = settingsFile.readlines()[3]
+        playlistURL = settingsFile.readlines()[2]
         settingsFile.close()
 
         # Tries to fetch the playlist
@@ -237,10 +236,9 @@ class SpotifyInteractor():
             oldSongs.append(line[:line.find(" ")])
         
         # Creates a list of all the songs in the playlist
-        
         # Reads the url from settings
         settingsFile = open("Config\\settings", "r")
-        playlistURL = settingsFile.readlines()[3]
+        playlistURL = settingsFile.readlines()[2]
         settingsFile.close()
 
         # Creates a list of new songs
@@ -332,7 +330,7 @@ class SpotifyInteractor():
     
     def getPlaylistFileFromSettings(self):
         settingsFile = open("Config\\settings", "r")
-        fileName = self.playlistURLToFileName(settingsFile.readlines()[3])
+        fileName = self.playlistURLToFileName(settingsFile.readlines()[2])
         settingsFile.close()
         return fileName
     

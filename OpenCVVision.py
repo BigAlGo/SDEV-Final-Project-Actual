@@ -147,7 +147,7 @@ class OpenCVVision():
                             return
                         elif roundType:
                             print("roundEnd = True: " + str(roundType))
-                            print(f"[{x_pe:.2f}, " + f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
+                            print(f"[{x_pe:.2f}", f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
                             cv2.imwrite('roundEnd.png', img)
 
                             roundEnd = True
@@ -162,7 +162,6 @@ class OpenCVVision():
                 if not roundEnd and time.time() > self.roundEndTime + 1 and time.time() < self.roundEndTime + 2:
                     self.startMusic()
                     cv2.imwrite('roundEnd.png', img)
-                    self.lastRoundEnd = False # Dont need?
                     self.roundEndTime = 0
                     self.running = False
                     self.stopLoop()
