@@ -72,14 +72,14 @@ def createSettingsWindow():
 
     # Sets the orginal volume to be the last volume
     loudVolumeScale.set(int(fileLines[0][0:3]))
-    quietVolumeScale.set(int(fileLines[0][3:5]))
+    quietVolumeScale.set(int(fileLines[0][3:6]))
 
     # Creates the entry fields for the playlist
     global playListLinkText
     playListLinkText = Entry(settingsWindow, width = 30, justify = "center", bg = "#eb4454", fg = "#e8fbfb")
     
     # Adds previous playlist to the field
-    playListLinkText.insert(0, fileLines[3])
+    playListLinkText.insert(0, fileLines[2])
 
     settingsFile.close()
 
@@ -182,7 +182,7 @@ def settingsDestroyed(event):
     '''When the settings window is manually closed and they didnt click save, 
     reopen the main window and remake the hotkeys'''
     mainWindow.deiconify()
-    spotifyIntern.makeHotKey()
+    spotifyIntern.makeHotKeys()
 
 
 def saveSettings():

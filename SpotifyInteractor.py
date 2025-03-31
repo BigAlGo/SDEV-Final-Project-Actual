@@ -30,10 +30,10 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        # self.devices = self.spotifyClient.devices()
-        # while not self.devices['devices']:
-            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
-            # self.devices = self.spotifyClient.devices()
+        self.devices = self.spotifyClient.devices()
+        while not self.devices['devices']:
+            messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+            self.devices = self.spotifyClient.devices()
         self.nextSong = None
         self.roundLoop = False
 
