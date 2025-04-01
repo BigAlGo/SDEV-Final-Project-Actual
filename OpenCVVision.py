@@ -3,6 +3,7 @@ import time
 import mss
 import numpy as np
 import threading
+
 # Todo when flased it breakes
 # todo when switching people it breaks
 class OpenCVVision():
@@ -24,6 +25,9 @@ class OpenCVVision():
         self.thrifty = [[12.03, 5.00, 1.82, 6.48], [10.31, 5.00, 1.61, 6.48], [8.85, 5.00, 1.30, 6.48], [7.86, 5.00, 0.73, 6.48], [5.83, 5.00, 1.77, 6.48], [3.75, 5.00, 1.82, 6.48], [2.03, 5.00, 1.51, 6.48]]
         # But if you see the buy phase, instantly play music
         self.buyPhase = [[7.03, 11.85, 1.30, 2.31], [1.35, 4.54, 1.46, 5.19], [13.12, 4.44, 1.15, 5.28], [11.56, 4.44, 1.41, 5.28], [9.95, 4.44, 1.51, 5.28], [8.28, 4.44, 1.51, 5.28], [6.72, 4.44, 1.41, 5.28], [2.97, 4.44, 1.46, 5.28]]
+        self.lastRoundBeforeSwap = []
+        self.endGame = []
+        self.suddenDeath = []
 
         self.lastRoundEnd = False
         self.roundEndTime = 0
@@ -80,6 +84,20 @@ class OpenCVVision():
             for ref in self.buyPhase:
                 if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
                     return "Buy Phase"
+            '''
+            # Last Round Before Swap
+            for ref in self.lastRoundBeforeSwap:
+                if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
+                    return "Last Round Before Swap"
+            # Endgame
+            for ref in self.endGame:
+                if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
+                    return "Endgame"
+            # Sudden Death
+            for ref in self.suddenDeath:
+                if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
+                    return "Sudden Death"
+                    '''
 
             return None
     
@@ -97,12 +115,13 @@ class OpenCVVision():
     def mainLoop(self):
         '''Takes in the startMusic function as the function to be called when the banner dissapears, calls that function when the next round starts, and then returns'''
         with mss.mss() as sct:
+            roundEnd = False
             while self.running:
-                roundEnd = False
+                buyPhase = False
                 screenshot = sct.grab(self.captureRegion) # Takes Screenshot
                 img = np.array(screenshot) # Convert to a usable format 
                 imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # Convert to HSV
-                threshold = cv2.inRange(imgRGB, (234, 232, 237), (255, 255, 255)) # Threshold out evrything exept white
+                threshold = cv2.inRange(imgRGB, (210, 203, 202), (255, 255, 255)) # Threshold out evrything exept white
                 edges = cv2.Canny(threshold, threshold1 = 50, threshold2 = 150) # Finds edges
                 boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
 
@@ -139,41 +158,26 @@ class OpenCVVision():
 
                         # Finds if the box is part of the banner
                         roundType = self.detectRoundType(x_pe, y_pe, w_pe, h_pe)
-                        if roundType == "Buy Phase":
-                            # PANIC This shouldnt happen as the program should already have returned
+                        # todo Add more here
+                        if roundType == "Buy Phase" or roundType == "":
+                            print("Buy Phase")
+                            print(f"[{x_pe:.2f}", f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
                             self.startMusic()
-                            print("PANIC")
+
                             cv2.imwrite('buyroundEnd.png', img)
                             return
                         elif roundType:
                             print("roundEnd = True: " + str(roundType))
                             print(f"[{x_pe:.2f}", f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
                             cv2.imwrite('roundEnd.png', img)
-
                             roundEnd = True
-                            
-
-                # Once the banner has disappeared
-                if not roundEnd and self.lastRoundEnd:
-                    self.roundEndTime = time.time()
-                    print("No Mo Banner")
-                
-                # Once 1 second after the banner has disappeared
-                if not roundEnd and time.time() > self.roundEndTime + 1 and time.time() < self.roundEndTime + 2:
-                    self.startMusic()
-                    cv2.imwrite('roundEnd.png', img)
-                    self.roundEndTime = 0
-                    self.running = False
-                    self.stopLoop()
-                    return
 
                 # If the banner is not up, shoot at 1 fps
-                if not roundEnd and not (time.time() > self.roundEndTime + 1 and time.time() < self.roundEndTime + 2):
+                if not roundEnd:
                     time.sleep(1)
                     print("1 fps")
 
                 # Sets variables for next loop
-                self.lastRoundEnd = roundEnd
                 self.lastBoxes = currentBoxes
 
 
@@ -187,7 +191,7 @@ class OpenCVVision():
                 screenshot = sct.grab(self.captureRegion) # Takes Screenshot
                 img = np.array(screenshot) # Convert to a usable format 
                 imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # Convert to HSV
-                threshold = cv2.inRange(imgRGB, (234, 232, 237), (255, 255, 255)) # Threshold out evrything exept white
+                threshold = cv2.inRange(imgRGB, (210, 203, 202), (255, 255, 255)) # Threshold out evrything exept white
                 edges = cv2.Canny(threshold, threshold1=50, threshold2=150) # Finds edges
                 boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
 
@@ -244,7 +248,7 @@ class OpenCVVision():
                     self.roundEndTime = time.time()
                 
                 if not (roundEnd) and time.time() > self.roundEndTime + 1 and time.time() < self.roundEndTime + 2:
-                    self.startMusic(False)
+                    self.startMusic()
                     self.lastRoundEnd = False
                     cv2.imwrite('roundEnd.png', img)
                     self.roundEndTime = 0
@@ -262,5 +266,6 @@ def DoOrDie():
     print("HE DID")
 
 if __name__ == "__main__":
-    opencv = OpenCVVision(1920, 1080, DoOrDie)
+    # opencv = OpenCVVision(1920, 1080, DoOrDie)
+    opencv = OpenCVVision(1366, 768, DoOrDie)
     opencv.debug()

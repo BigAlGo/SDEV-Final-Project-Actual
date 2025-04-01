@@ -4,7 +4,8 @@ import argparse
 import mss
 import numpy as np
 
-captureRegion = {"top" : int(11.5/100 * 1080), "left" : int(27.0/64.0 * 1920), "width" : int(10.0/64.0 * 1920), "height" : int(3.0/20.0 * 1080)}
+# captureRegion = {"top" : int(11.5/100 * 1080), "left" : int(27.0/64.0 * 1920), "width" : int(10.0/64.0 * 1920), "height" : int(3.0/20.0 * 1080)}
+captureRegion = {"top" : int(11.5/100 * 768), "left" : int(27.0/64.0 * 1366), "width" : int(10.0/64.0 * 1366), "height" : int(3.0/20.0 * 768)}
 max_value = 255
 max_value_H = 255#360//2
 low_H = 0
