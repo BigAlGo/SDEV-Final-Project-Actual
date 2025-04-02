@@ -7,7 +7,7 @@ import numpy as np
 # captureRegion = {"top" : int(11.5/100 * 1080), "left" : int(27.0/64.0 * 1920), "width" : int(10.0/64.0 * 1920), "height" : int(3.0/20.0 * 1080)}
 captureRegion = {"top" : int(11.5/100 * 768), "left" : int(27.0/64.0 * 1366), "width" : int(10.0/64.0 * 1366), "height" : int(3.0/20.0 * 768)}
 max_value = 255
-max_value_H = 255#360//2
+max_value_H = 360//2
 low_H = 0
 low_S = 0
 low_V = 0
@@ -77,7 +77,7 @@ while True:
     frame = np.array(cap)
     if frame is None:
         break
-    frame_HSV = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+    frame_HSV = cv.cvtColor(frame, cv.COLOR_BGR2HSV)
     frame_threshold = cv.inRange(frame_HSV, (low_H, low_S, low_V), (high_H, high_S, high_V))
     
     

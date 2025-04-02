@@ -120,11 +120,11 @@ class OpenCVVision():
                 buyPhase = False
                 screenshot = sct.grab(self.captureRegion) # Takes Screenshot
                 img = np.array(screenshot) # Convert to a usable format 
-                imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # Convert to HSV
-                threshold = cv2.inRange(imgRGB, (210, 203, 202), (255, 255, 255)) # Threshold out evrything exept white
-                edges = cv2.Canny(threshold, threshold1 = 50, threshold2 = 150) # Finds edges
+                imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # Convert to HSV
+                threshold = cv2.inRange(imgHSV, (0, 0, 235), (180, 36, 255)) # Threshold out evrything exept white
+                blurred = cv2.GaussianBlur(threshold, (5, 5), 0)# Reduce noise
+                edges = cv2.Canny(blurred, threshold1 = 50, threshold2 = 150) # Finds edges
                 boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
-
                 currentBoxes = []
 
                 # Filters out small coutours and converts to percentage
@@ -190,9 +190,10 @@ class OpenCVVision():
                 print("frame")
                 screenshot = sct.grab(self.captureRegion) # Takes Screenshot
                 img = np.array(screenshot) # Convert to a usable format 
-                imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # Convert to HSV
-                threshold = cv2.inRange(imgRGB, (210, 203, 202), (255, 255, 255)) # Threshold out evrything exept white
-                edges = cv2.Canny(threshold, threshold1=50, threshold2=150) # Finds edges
+                imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # Convert to HSV
+                threshold = cv2.inRange(imgHSV, (0, 0, 235), (180, 36, 255)) # Threshold out evrything exept white
+                blurred = cv2.GaussianBlur(threshold, (5, 5), 0)# Reduce noise
+                edges = cv2.Canny(blurred, threshold1 = 50, threshold2 = 150) # Finds edges
                 boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
 
                 currentBoxes = []
@@ -227,8 +228,7 @@ class OpenCVVision():
 
                         x_px, y_px, w_px, h_px = int(x * self.screenWidth), int(y * self.screenHeight), int(w * self.screenWidth), int(h * self.screenHeight)
                         cv2.rectangle(img, (x_px, y_px), (x_px + w_px, y_px + h_px), (0, 255, 0), 2)
-
-
+                        cv2.rectangle(edges, (x_px, y_px), (x_px + w_px, y_px + h_px), (0, 255, 0), 2)
 
                         # Finds if the box is part of the banner
                         roundType = self.detectRoundType(x_pe, y_pe, w_pe, h_pe)
@@ -236,28 +236,15 @@ class OpenCVVision():
                         if roundType == "Buy Phase":
                             # PANIC This shouldnt happen as the program should already have returned
                             self.startMusic()
-                            print("PANIC")
+                            print("Sees Buy " + str(roundType))
+                            print("I Saw: " + f"[{x_pe:.2f}, " + f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
                         elif roundType:
-                            # Makes sure roundtype isnt null
-                            print("roundEnd = True:" + str(roundType))
+                            print("Sees roundEnd" + str(roundType))
                             print("I Saw: " + f"[{x_pe:.2f}, " + f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
 
-                            roundEnd = True
-
-                if not (roundEnd) and self.lastRoundEnd:
-                    self.roundEndTime = time.time()
-                
-                if not (roundEnd) and time.time() > self.roundEndTime + 1 and time.time() < self.roundEndTime + 2:
-                    self.startMusic()
-                    self.lastRoundEnd = False
-                    cv2.imwrite('roundEnd.png', img)
-                    self.roundEndTime = 0
-
-
-                self.lastRoundEnd = roundEnd
                 self.lastBoxes = currentBoxes 
 
-                cv2.imshow('img', img)
+                # cv2.imshow('img', img)
                 cv2.imshow('threshgold', edges)
                 key = cv2.waitKey(30)
 
