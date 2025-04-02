@@ -137,7 +137,7 @@ def createHotKeyWindow():
     global pauseKeyText
 
     # Creates the entry fields for the hotkeys    
-    playKeyText =  Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
+    playKeyText =  Entry(hotkeyWindow, justify = "center                            ", width = 10, bg = "#000000", fg = "#f57e3a")
     endKeyText =   Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
     lowKeyText =   Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
     highKeyText =  Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")

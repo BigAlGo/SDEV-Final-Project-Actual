@@ -298,7 +298,7 @@ class SpotifyInteractor():
 
         fileName = self.getPlaylistFileFromSettings()
 
-        songNames = open("Songs\\" + fileName, "r")
+        songNames = open("Songs\\" + fileName, "w")
         songNames.writelines(songs)
         songNames.close()
 
