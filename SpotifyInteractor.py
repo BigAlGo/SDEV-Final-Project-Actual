@@ -1,6 +1,9 @@
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 from tkinter import messagebox
+from pygame import mixer
+import subprocess
+import spotdl
 import time
 import random
 import keyboard
@@ -13,6 +16,8 @@ import OpenCVVision as OpenCv
 class SpotifyInteractor():
     def __init__(self, screenWidth, screenHeight):
         self.vision = OpenCv.OpenCVVision(screenWidth, screenHeight, self.roundStart)
+        mixer.init()
+
 
         self.makeHotKeys()
         self.songNumber = 0
@@ -30,10 +35,10 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        self.devices = self.spotifyClient.devices()
-        while not self.devices['devices']:
-            messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
-            self.devices = self.spotifyClient.devices()
+        # self.devices = self.spotifyClient.devices()
+        # while not self.devices['devices']:
+            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+            # self.devices = self.spotifyClient.devices()
         self.nextSong = None
         self.roundLoop = False
 
@@ -63,7 +68,7 @@ class SpotifyInteractor():
         print("round #" + str(self.roundNumber))
 
         # Get the current device
-        device_id = self.devices['devices'][0]['id']
+        # device_id = self.devices['devices'][0]['id']
 
         # Get the playlist file
         file_name = self.getPlaylistFileFromSettings()
@@ -82,7 +87,6 @@ class SpotifyInteractor():
         file.close()
 
         # Adjust round timing based on game type
-        wifi_offset = 0.5
         round_times = {
             "Normal": (30, 13, 45, 30, 25),
             "Swift": (30, 5, 45, 30, 9),
@@ -90,7 +94,8 @@ class SpotifyInteractor():
         }
         first_round_time, half_time_round, half_time_time, normal_round_time, over_time_round = round_times.get(game_type, (30, 13, 45, 30, 25))
 
-        song_uri = self.convertUrlToUri(song_line.split(" ")[0])
+
+        song_url = song_line.split(" ")[0]
 
         # Determine when to play the song
         play_after_time = round_start_time
@@ -100,19 +105,19 @@ class SpotifyInteractor():
             if song_time > first_round_time:
                 play_into_time = song_time - first_round_time
             else:
-                play_after_time += first_round_time - song_time - wifi_offset
+                play_after_time += first_round_time - song_time
             print("First round, song starts in:", first_round_time - (time.monotonic() - round_start_time))
         elif self.roundNumber == half_time_round or self.roundNumber >= over_time_round:
             if song_time > half_time_time:
                 play_into_time = song_time - half_time_time
             else:
-                play_after_time += half_time_time - song_time - wifi_offset
+                play_after_time += half_time_time - song_time
             print("Half-time round, song starts in:", half_time_time - (time.monotonic() - round_start_time))
         else:
             if song_time > normal_round_time:
                 play_into_time = song_time - normal_round_time
             else:
-                play_after_time += normal_round_time - song_time - wifi_offset
+                play_after_time += normal_round_time - song_time
             print("Normal round, song starts in:", normal_round_time - (time.monotonic() - round_start_time))
 
         # Ensure play_after_time is in the future
@@ -122,6 +127,12 @@ class SpotifyInteractor():
 
         if play_into_time == 0:
             # Wait for play_after_time
+            if play_after_time - time.monotonic() < 3:
+                mixer.music.fadeout((play_after_time - time.monotonic()) / 3)
+
+            while time.monotonic() < play_after_time - 3:
+                mixer.music.fadeout(3)
+                mixer.mixer_music.fadeout
             while time.monotonic() < play_after_time and self.roundLoop:
                 print(f"Waiting... {play_after_time - time.monotonic():.2f} seconds left")
                 time.sleep(0.05)
@@ -173,7 +184,7 @@ class SpotifyInteractor():
         self.roundNumber += 1
         
         if self.roundLoop:
-            # I am still in a thread so while loops don't affect the over all program
+            # I am still in a thread so while loops don't affect the overall program
             self.vision.mainLoop()
         else:
             self.resetRounds()
@@ -298,7 +309,7 @@ class SpotifyInteractor():
 
         fileName = self.getPlaylistFileFromSettings()
 
-        songNames = open("Songs\\" + fileName, "w")
+        songNames = open("Songs\\" + fileName, "r")
         songNames.writelines(songs)
         songNames.close()
 
@@ -378,3 +389,44 @@ class SpotifyInteractor():
     def setNextSong(self, set):
         '''Sets the next song'''
         self.nextSong = set
+
+    def download_song(query):
+        '''Downloads the song specified by query using spotdl and the command line'''      
+        try:
+            subprocess.run(["spotdl", "download", query, "--save-file", "Songs\\LocalSongsMP3\\" + query], check=True)
+            return True
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Error Downloading", "Error Downloading " + query + ", Song most likely got deleted off of spotify")
+            return False
+        
+if __name__ == "__main__":
+    # Testing pygame.mixer
+    startTime = time.time()
+    mixer.init()
+
+    print("init time: ", time.time() - startTime)
+    startTime = time.time()
+
+    mixer.music.load("Songs\\LocalSongsMP3\\TestSong.mp3")
+
+    print("load time: ", time.time() - startTime)
+    # startTime = time.time()
+
+    mixer.music.play(loops = -1, fade_ms = 5000)
+
+    print("play time: ", time.time() - startTime)
+    # startTime = time.time()
+
+    mixer.music.set_pos(0)
+
+    print("setp time: ", time.time() - startTime)
+    startTime = time.time()
+
+    time.sleep(7)
+    
+    startTime = time.time()
+    mixer.music.unload()
+
+    print("unlo time: ", time.time() - startTime)
+
+    

@@ -4,6 +4,7 @@ IMPORTANT: You must run
 .\pip install keyboard # For global hotkeys
 .\pip install spotdl # For downloading music
 .\pip install pygame # For Music playing (not implemented)
+.\spotdl --download-ffmpeg # For Spotdl
 .\pip install opencv-python # For image prossesing
 .\pip install mss # For screen capture
 

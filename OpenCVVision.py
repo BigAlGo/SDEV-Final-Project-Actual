@@ -49,37 +49,37 @@ class OpenCVVision():
         # Won
         for ref in self.wonArrays:
             if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
-                return "Won"
+                return "0Won"
 
         # Loss
         for ref in self.lossArrays:
             if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
-                return "Loss"
+                return "0Loss"
 
         # Flawless
         for ref in self.flawless:
             if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
-                return "Flawless"
+                return "0Flawless"
 
         # Clutch
         for ref in self.clutchArrays:
             if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
-                return "Clutch"
+                return "0Clutch"
 
         # Ace
         for ref in self.ace:
             if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
-                return "Ace"
+                return "0Ace"
 
         # Team Ace
         for ref in self.teamAceArray:
             if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
-                return "Team Ace"
+                return "0Team Ace"
 
         # Thrifty
         for ref in self.thrifty:
             if self.isMatch(x_pe, y_pe, w_pe, h_pe, ref):
-                return "Thrifty"
+                return "0Thrifty"
 
         # For next round text
         # Buy Phase
@@ -120,13 +120,12 @@ class OpenCVVision():
         distance = np.sqrt((arr1[0] - arr2[0]) ** 2 + (arr1[1] - arr2[1]) ** 2)
         sizeDiff = abs(arr1[2] - arr2[2]) + abs(arr1[3] - arr2[3])
         return distance, sizeDiff
-    
-    def mainLoop(self):
+
+    def mainLoop(self, fps = 1):
         '''Uses the startMusic function as the function to be called when the next round starts, calls that function when the next round starts, and then returns'''
         with mss.mss() as sct:
             roundEnd = False
             while self.running:
-                buyPhase = False
                 screenshot = sct.grab(self.captureRegion) # Takes Screenshot
                 img = np.array(screenshot) # Convert to a usable format 
                 imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # Convert to HSV
@@ -183,8 +182,10 @@ class OpenCVVision():
 
                 # If the banner is not up, shoot at 1 fps
                 if not roundEnd:
-                    time.sleep(1)
+                    time.sleep(1 / fps)
                     print("1 fps")
+                else:
+                    print("unlimited fps")
 
                 # Sets variables for next loop
                 self.lastBoxes = currentBoxes
@@ -263,7 +264,6 @@ class OpenCVVision():
                         roundType = self.detectRoundType(x_pe, y_pe, w_pe, h_pe)
                         
                         # if roundType == "Buy Phase":
-                            # PANIC This shouldnt happen as the program should already have returned
                             # print("Sees Buy " + str(roundType))
                             # print("I Saw: " + f"[{x_pe:.2f}, " + f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
                         # elif roundType:
