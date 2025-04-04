@@ -2,13 +2,14 @@ IMPORTANT: You must run
 
 .\pip install spotipy # Spotify's API
 .\pip install keyboard # For global hotkeys
-.\pip install spotdl # For downloading music
-.\pip install pygame # For Music playing (not implemented)
-.\spotdl --download-ffmpeg # For Spotdl
 .\pip install opencv-python # For image prossesing
 .\pip install mss # For screen capture
+.\pip install pygame # For Music playing
+.\pip install spotdl --user # For downloading songs 
+.\spotdl --download-ffmpeg # For Spotdl
 
 in your scripts file before running
+
 The file to run is ValoBeatsMain
 
 If you get the error "requests.exceptions.SSLError: HTTPSConnectionPool" That means either you dont have internet or the connection was blocked by a firewall

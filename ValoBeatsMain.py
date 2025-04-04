@@ -12,6 +12,7 @@ import SpotifyInteractor as SI
 
 #todo add a separate window for hotkeys and add more hotkeys
 #todo add the ability to loop through the playlist song file 
+#todo fix the bug of the song number being longer than the playlist file might not be a bug
 def createSettingsWindow():
     '''Creates the settings window'''
     # Hides main window
@@ -137,7 +138,7 @@ def createHotKeyWindow():
     global pauseKeyText
 
     # Creates the entry fields for the hotkeys    
-    playKeyText =  Entry(hotkeyWindow, justify = "center                            ", width = 10, bg = "#000000", fg = "#f57e3a")
+    playKeyText =  Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
     endKeyText =   Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
     lowKeyText =   Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
     highKeyText =  Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
@@ -150,7 +151,7 @@ def createHotKeyWindow():
     fileLines = settingsFile.readlines()
     settingsFile.close()
 
-    playKey = fileLines[0][:-1]        
+    playKey = fileLines[0][:-1]
     endKey = fileLines[1][:-1]
     lowKey = fileLines[2][:-1]
     highKey = fileLines[3][:-1]
@@ -261,6 +262,8 @@ def saveSettings():
                 playlistSongFile.write(song + " " + str(time) + "\n")
 
     masterSongFile.close()
+
+    spotifyIntern.downloadSavedSongs()
 
     mainWindow.deiconify()
 

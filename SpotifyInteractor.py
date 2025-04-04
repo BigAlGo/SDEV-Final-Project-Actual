@@ -2,20 +2,27 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 from tkinter import messagebox
 from pygame import mixer
+import os
 import subprocess
-import spotdl
 import time
 import random
 import keyboard
 import spotipy
 import re
 import threading
+import sys
 
 import OpenCVVision as OpenCv
 
 class SpotifyInteractor():
     def __init__(self, screenWidth, screenHeight):
         self.vision = OpenCv.OpenCVVision(screenWidth, screenHeight, self.roundStart)
+
+        # Beacuse I dont want to print anything out while calling mixer.init()
+        sys.stdout = open(os.devnull, 'w')
+        mixer.init()
+        sys.stdout = sys.__stdout__
+
         mixer.init()
 
 
@@ -35,10 +42,10 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        # self.devices = self.spotifyClient.devices()
-        # while not self.devices['devices']:
-            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
-            # self.devices = self.spotifyClient.devices()
+        self.devices = self.spotifyClient.devices()
+        while not self.devices['devices']:
+            messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+            self.devices = self.spotifyClient.devices()
         self.nextSong = None
         self.roundLoop = False
 
@@ -55,6 +62,7 @@ class SpotifyInteractor():
 
 
     def stopRoundLoop(self):
+        mixer.music.fadeout(2500)
         self.roundLoop = False
         self.vision.stopLoop()
 
@@ -94,7 +102,6 @@ class SpotifyInteractor():
         }
         first_round_time, half_time_round, half_time_time, normal_round_time, over_time_round = round_times.get(game_type, (30, 13, 45, 30, 25))
 
-
         song_url = song_line.split(" ")[0]
 
         # Determine when to play the song
@@ -127,42 +134,40 @@ class SpotifyInteractor():
 
         if play_into_time == 0:
             # Wait for play_after_time
-            if play_after_time - time.monotonic() < 3:
-                mixer.music.fadeout((play_after_time - time.monotonic()) / 3)
-
-            while time.monotonic() < play_after_time - 3:
-                mixer.music.fadeout(3)
-                mixer.mixer_music.fadeout
+            if time.monotonic() <= play_after_time - 3:
+                # if less than 3 sec before play fade out quick
+                mixer.music.fadeout(int(((play_after_time - time.monotonic()) / 3) * 1000))
+            else:
+                # else wait for the time then fade out slow
+                while time.monotonic() > play_after_time - 3 and self.roundLoop:
+                    print(f"Waiting... {play_after_time - time.monotonic():.2f} seconds left")
+                    time.sleep(0.05)
+                mixer.music.fadeout(2500)
+            # Wait until ready to play
+            randNum = 0
             while time.monotonic() < play_after_time and self.roundLoop:
                 print(f"Waiting... {play_after_time - time.monotonic():.2f} seconds left")
-                time.sleep(0.05)
+                randNum += 1 # to not kill the cpu
 
             # Start playback
-            start_time = time.monotonic()
-            self.spotifyClient.start_playback(device_id = device_id, uris = [song_uri])
+            # mixer.music.load("Songs\\LocalSongsMP3\\TestSong.mp3")
+            self.setVolumeHigh()
+            mixer.music.load("Songs\\LocalSongsMP3\\" + self.sanitizeFilename(song_url) + ".mp3")
+            
+            if song_time < 3:
+                mixer.music.play(loops = -1, fade_ms = int((song_time / 3) * 1000))
+            else:
+                mixer.music.play(loops = -1, fade_ms = 3000)
         else:
             # Start playback with offset
-            start_time = time.monotonic()
-            self.spotifyClient.start_playback(device_id = device_id, uris = [song_uri], position_ms = int((play_into_time - 0.67) * 1000))
+            mixer.fadeout(3000)
+            time.sleep(3.5)
+            mixer.music.load("Songs\\LocalSongsMP3\\TestSong.mp3")
+            mixer.music.load("Songs\\LocalSongsMP3\\" + self.sanitizeFilename(song_url) + ".mp3")
+            
+            mixer.music.play(loops = -1, fade_ms = 3000)
 
-        # Repeat track
-        self.spotifyClient.repeat("track", device_id = device_id)
-
-        print("Playback started, waiting for confirmation...")
-
-        # Wait for playback confirmation
-        while self.roundLoop:
-            playback = self.spotifyClient.current_playback()
-            if playback and playback["is_playing"]:
-                actual_start_time = time.monotonic()
-                break
-            time.sleep(0.05)
-
-        if not self.roundLoop:
-            actual_start_time = time.monotonic()
-        # Calculate actual delay
-        delay = actual_start_time - start_time
-        print(f"Actual playback delay: {delay:.3f} seconds")
+        print("started playback")
 
         # Wait until beat drop
         print_time = time.monotonic() + song_time
@@ -204,8 +209,8 @@ class SpotifyInteractor():
         try:
             keyboard.add_hotkey(playKey, callback = self.roundStartHotKeyPressed)
             keyboard.add_hotkey(endKey, callback = self.stopRoundLoop)
-            keyboard.add_hotkey(lowKey, callback = lambda: print("lowKey"))
-            keyboard.add_hotkey(highKey, callback = lambda: print("highKey"))
+            keyboard.add_hotkey(lowKey, callback = self.setVolumeLow)
+            keyboard.add_hotkey(highKey, callback = self.setVolumeHigh)
             keyboard.add_hotkey(pauseKey, callback = lambda: print("pauseKey"))
 
             return True
@@ -296,6 +301,23 @@ class SpotifyInteractor():
         playlistFile.close()
         masterFile.close()
         return uniqueSongs
+    
+    def downloadSavedSongs(self):
+        songsFile = open("Songs\\masterSongFile", "r")
+        songLines = songsFile.readlines()
+        songsFile.close()
+
+        songUrls = []
+
+        for line in songLines:
+            songUrls.append(line.split(" ")[0])
+
+        # todo give a time estimate 15 seconds per song
+        messagebox.showinfo("Downloading Songs", "The program might download a lot of songs from spotify, this may take a few minutes")
+
+        for url in songUrls:
+            self.downloadSong(url)
+        
 
     def shuffleSongs(self):
         '''This shuffles the songs in songNames'''
@@ -383,23 +405,87 @@ class SpotifyInteractor():
 
     def resetRounds(self):
         '''Resets the rounds and pauses playback'''
-        self.spotifyClient.pause_playback()
+        mixer.music.fadeout(5000)
         self.roundNumber = 1
     
+    # Maybe make it fade?
+    def setVolumeHigh(self):
+        '''Sets the volume to the high volume'''
+        settingFile = open("Config\\settings", "r")
+        fileLines = settingFile.readlines()
+        settingFile.close()
+        volume = int(fileLines[0][0:3])
+        mixer.music.set_volume(volume)
+
+    def setVolumeLow(self):
+        '''Sets the volume to the low volume'''
+        settingFile = open("Config\\settings", "r")
+        fileLines = settingFile.readlines()
+        settingFile.close()
+        volume = int(fileLines[0][3:6])
+        mixer.music.set_volume(volume)
+
+    def pausePlay(self):
+        if mixer.music.get_busy():
+            mixer.music.pause()
+        else:
+            mixer.music.play()
+
     def setNextSong(self, set):
         '''Sets the next song'''
         self.nextSong = set
 
-    def download_song(query):
-        '''Downloads the song specified by query using spotdl and the command line'''      
+    def downloadSong(self, url):
+        '''Downloads the song specified by query using spotdl and the command line, if the song already exists then return None'''      
+        
+        # Looks in the current working directory for the song file and spotdl
+        cwd = os.getcwd()
+        cwdUser = cwd[:cwd[9:].find("\\") + 9]
+
+        spotdlPath = cwdUser + "\\AppData\\Roaming\\Python\\Python313\\Scripts\\spotdl.exe"
+        outputPath = cwd + "\\Songs\\LocalSongsMP3"
+        fileName = self.sanitizeFilename(url) + ".mp3"
+
+        # if file already exists
+        for file in os.listdir(outputPath):
+            if file == fileName:
+                return
         try:
-            subprocess.run(["spotdl", "download", query, "--save-file", "Songs\\LocalSongsMP3\\" + query], check=True)
+            subprocess.run([spotdlPath, url, "--output", outputPath], check=True)
+
+            # Renaming the file
+            newFilePath = os.path.join(outputPath, fileName)
+
+            # List all files in the directory
+            mp3_files = os.listdir(outputPath)
+
+            # find the most recently modified file
+            latest_file = None
+            latest_mtime = 0
+
+            # Loop through the filtered mp3 files to find the one with the most recent modification
+            for file in mp3_files:
+                file_path = os.path.join(outputPath, file)
+                file_mtime = os.path.getmtime(file_path)
+
+                if file_mtime > latest_mtime:
+                    latest_mtime = file_mtime
+                    latest_file = file
+
+            # Return the path of the most recently modified file, the one we just downloaded
+            print(outputPath)
+            print(latest_file)
+            downloadedFilePath = os.path.join(outputPath, latest_file)
+
+            os.rename(downloadedFilePath, newFilePath)
+
             return True
         except subprocess.CalledProcessError as e:
-            messagebox.showerror("Error Downloading", "Error Downloading " + query + ", Song most likely got deleted off of spotify")
+            messagebox.showerror("Error Downloading", "Error Downloading " + url + ", Song most likely got deleted off of spotify")
             return False
         
 if __name__ == "__main__":
+    '''
     # Testing pygame.mixer
     startTime = time.time()
     mixer.init()
@@ -427,6 +513,8 @@ if __name__ == "__main__":
     startTime = time.time()
     mixer.music.unload()
 
-    print("unlo time: ", time.time() - startTime)
-
-    
+    print("unlo time: ", time.time() - startTime)'
+    '''
+    spotifyIntern = SpotifyInteractor(1920, 1080)
+    spotifyIntern.downloadSong("https://open.spotify.com/track/4ZPwjq0CdxbWFNycxnSUJc")
+    spotifyIntern.downloadSavedSongs()
