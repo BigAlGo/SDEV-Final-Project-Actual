@@ -133,51 +133,59 @@ def createHotKeyWindow():
 
     global playKeyText
     global endKeyText
+    global pauseKeyText
     global lowKeyText
     global highKeyText
-    global pauseKeyText
 
     # Creates the entry fields for the hotkeys    
     playKeyText =  Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
     endKeyText =   Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
+    pauseKeyText = Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
     lowKeyText =   Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
     highKeyText =  Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
-    pauseKeyText = Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
 
-    saveButton = Button(hotkeyWindow, text = "Save", command = saveHotKeys, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
+    playKeyText .bind("<Button-1>", spotifyIntern.hotKeyEntryClicked)
+    endKeyText  .bind("<Button-1>", spotifyIntern.hotKeyEntryClicked)
+    pauseKeyText.bind("<Button-1>", spotifyIntern.hotKeyEntryClicked)
+    lowKeyText  .bind("<Button-1>", spotifyIntern.hotKeyEntryClicked)
+    highKeyText .bind("<Button-1>", spotifyIntern.hotKeyEntryClicked)
 
     # Opens the settings file
     settingsFile = open("Config\\hotkeys", "r")
     fileLines = settingsFile.readlines()
     settingsFile.close()
 
-    playKey = fileLines[0][:-1]
-    endKey = fileLines[1][:-1]
-    lowKey = fileLines[2][:-1]
-    highKey = fileLines[3][:-1]
+    playKey  = fileLines[0][:-1]
+    endKey   = fileLines[1][:-1]
     pauseKey = fileLines[4][:-1]
+    lowKey   = fileLines[2][:-1]
+    highKey  = fileLines[3][:-1]
 
     # Adding the hotkeys to the entry
-    playKeyText.insert(0, playKey)
-    endKeyText.insert(0, endKey)
-    lowKeyText.insert(0, lowKey)
-    highKeyText.insert(0, highKey)
+    playKeyText .insert(0, playKey)
+    endKeyText  .insert(0, endKey)
     pauseKeyText.insert(0, pauseKey)
+    lowKeyText  .insert(0, lowKey)
+    highKeyText .insert(0, highKey)
+
+    saveButton = Button(hotkeyWindow, text = "Save", command = saveHotKeys, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
+    recordButton = Button(hotkeyWindow, text = "Record Hotkey", command = spotifyIntern.hotKeyRecord, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
     
     # Adding the elements
     hotkeyCanvas.create_text(50, 50, justify = "center", text = "Play Hotkey")
     hotkeyCanvas.create_text(170, 50, justify = "center", text = "End Game Hotkey")
-    hotkeyCanvas.create_text(290, 50, justify = "center", text = "Volume Down Hotkey")
-    hotkeyCanvas.create_text(105, 150, justify = "center", text = "Volume Up Hotkey")
-    hotkeyCanvas.create_text(235, 150, justify = "center", text = "Pause Hotkey")
+    hotkeyCanvas.create_text(290, 50, justify = "center", text = "Pause Hotkey")
+    hotkeyCanvas.create_text(105, 150, justify = "center", text = "Volume Down Hotkey")
+    hotkeyCanvas.create_text(235, 150, justify = "center", text = "Volume Up Hotkey")
 
     hotkeyCanvas.create_window(50, 70, window = playKeyText)
     hotkeyCanvas.create_window(170, 70, window = endKeyText)
-    hotkeyCanvas.create_window(290, 70, window = lowKeyText)
-    hotkeyCanvas.create_window(105, 170, window = highKeyText)
-    hotkeyCanvas.create_window(235, 170, window = pauseKeyText)
+    hotkeyCanvas.create_window(290, 70, window = pauseKeyText)
+    hotkeyCanvas.create_window(105, 170, window = lowKeyText)
+    hotkeyCanvas.create_window(235, 170, window = highKeyText)
 
     hotkeyCanvas.create_window(270, 250, window = saveButton)
+    hotkeyCanvas.create_window(170, 120, window = recordButton)
 
 def settingsDestroyed(event):
     '''When the settings window is manually closed and they didnt click save, 
@@ -386,7 +394,6 @@ def main():
     settingsButton = Button(mainWindow, text = "Open Settings", bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = createSettingsWindow)
 
     # Adds each element to the canvas
-
     mainCanvas.create_window(80, 50, window = shuffleButton)
     mainCanvas.create_window(80, 75, window = resetRoundsButton)
 

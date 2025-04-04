@@ -2,6 +2,8 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 from tkinter import messagebox
 from pygame import mixer
+import OpenCVVision as OpenCv
+import tkinter as tk
 import os
 import subprocess
 import time
@@ -11,8 +13,7 @@ import spotipy
 import re
 import threading
 import sys
-
-import OpenCVVision as OpenCv
+import spotdl
 
 class SpotifyInteractor():
     def __init__(self, screenWidth, screenHeight):
@@ -42,12 +43,13 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        self.devices = self.spotifyClient.devices()
-        while not self.devices['devices']:
-            messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
-            self.devices = self.spotifyClient.devices()
+        # self.devices = self.spotifyClient.devices()
+        # while not self.devices['devices']:
+            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+            # self.devices = self.spotifyClient.devices()
         self.nextSong = None
         self.roundLoop = False
+        self.savedKey = None
 
     def roundStartHotKeyPressed(self):
         print("Button pressed")
@@ -216,6 +218,18 @@ class SpotifyInteractor():
             return True
         except (ValueError):
             return False
+        
+    def hotKeyRecord(self):
+        # messagebox.showinfo("Hotkey Record", "Please press ok, then any hot key combo you would like, then click on one of the fields.")
+        self.hotKeyRecord = keyboard.read_hotkey()
+
+    def hotKeyEntryClicked(self, event):
+        '''Replaces the entry with the hotkey'''
+        if self.hotKeyRecord:
+            # if not None 
+            event.widget.delete(0, tk.END)
+            event.widget.insert(0, self.hotKeyRecord)
+            self.hotKeyRecord = None
 
     def isValidPlaylist(self):
         '''Returns if the URL on line 3 of the settings file is valid'''
@@ -312,8 +326,22 @@ class SpotifyInteractor():
         for line in songLines:
             songUrls.append(line.split(" ")[0])
 
-        # todo give a time estimate 15 seconds per song
-        messagebox.showinfo("Downloading Songs", "The program might download a lot of songs from spotify, this may take a few minutes")
+        cwd = os.getcwd()
+        LocalSongs = cwd + "\\Songs\\LocalSongsMP3"
+
+        # Getting the number of songs in master vs in local
+        fileSongs = len(os.listdir(LocalSongs))
+        nameSongs = len(songUrls)
+        numberOfSongs = nameSongs - fileSongs
+
+        # Assumes 15 sec per song to download
+        timeSec = 15 * numberOfSongs
+        
+        timeMinute = int(timeSec / 60.0)
+        timeSec = timeSec % 60
+
+        if (numberOfSongs >= 1):
+            messagebox.showinfo("Downloading Songs", f"The program will download {numberOfSongs} songs from spotify, estimated time: {timeMinute} minute(s) and {timeSec} seconds. It may be longer depending on your internet. If the program says it is not responding during this time, it is probebly still downloading")
 
         for url in songUrls:
             self.downloadSong(url)
@@ -380,7 +408,7 @@ class SpotifyInteractor():
             return -1
     
     def sanitizeFilename(self, name):
-        ''' Replaces invalid filename characters'''
+        '''Replaces invalid filename characters'''
         name = name.strip().replace(" ", "_")
         return re.sub(r'[<>:"/\\|?*]', "_", name)
     
@@ -445,13 +473,17 @@ class SpotifyInteractor():
         spotdlPath = cwdUser + "\\AppData\\Roaming\\Python\\Python313\\Scripts\\spotdl.exe"
         outputPath = cwd + "\\Songs\\LocalSongsMP3"
         fileName = self.sanitizeFilename(url) + ".mp3"
-
+        
         # if file already exists
         for file in os.listdir(outputPath):
             if file == fileName:
                 return
         try:
-            subprocess.run([spotdlPath, url, "--output", outputPath], check=True)
+            try:
+                subprocess.run([spotdlPath, url, "--output", outputPath], check=True)
+            except FileNotFoundError:
+                subprocess.run([spotdlPath.replace("Roaming", "Local\\Programs"), url, "--output", outputPath], check=True)
+
 
             # Renaming the file
             newFilePath = os.path.join(outputPath, fileName)
