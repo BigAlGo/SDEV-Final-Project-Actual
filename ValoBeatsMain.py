@@ -5,14 +5,12 @@ from tkinter import simpledialog
 
 import SpotifyInteractor as SI
 
-#todo add local playing as online playing isnt accurate enough 
-#   Name files the id of the link
 #todo all the hotkeys that go with local playing such as turning the music down 
+#todo when setting songtimes, have an option to play it in pygame
 #todo when redoing song times, allow them to choose a certain song to remove
 
-#todo add a separate window for hotkeys and add more hotkeys
 #todo add the ability to loop through the playlist song file 
-#todo fix the bug of the song number being longer than the playlist file might not be a bug
+#todo fix the bug of the song number being longer than the playlist file
 def createSettingsWindow():
     '''Creates the settings window'''
     # Hides main window
@@ -187,7 +185,7 @@ def createHotKeyWindow():
     hotkeyCanvas.create_window(270, 250, window = saveButton)
     hotkeyCanvas.create_window(170, 120, window = recordButton)
 
-def settingsDestroyed(event):
+def settingsDestroyed():
     '''When the settings window is manually closed and they didnt click save, 
     reopen the main window and remake the hotkeys'''
     mainWindow.deiconify()

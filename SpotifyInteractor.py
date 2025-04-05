@@ -19,13 +19,8 @@ class SpotifyInteractor():
     def __init__(self, screenWidth, screenHeight):
         self.vision = OpenCv.OpenCVVision(screenWidth, screenHeight, self.roundStart)
 
-        # Beacuse I dont want to print anything out while calling mixer.init()
-        sys.stdout = open(os.devnull, 'w')
+        # todo I dont want to print anything out while calling mixer.init()
         mixer.init()
-        sys.stdout = sys.__stdout__
-
-        mixer.init()
-
 
         self.makeHotKeys()
         self.songNumber = 0
@@ -152,10 +147,10 @@ class SpotifyInteractor():
                 randNum += 1 # to not kill the cpu
 
             # Start playback
-            # mixer.music.load("Songs\\LocalSongsMP3\\TestSong.mp3")
             self.setVolumeHigh()
             mixer.music.load("Songs\\LocalSongsMP3\\" + self.sanitizeFilename(song_url) + ".mp3")
-            
+            self.setVolumeHigh()
+
             if song_time < 3:
                 mixer.music.play(loops = -1, fade_ms = int((song_time / 3) * 1000))
             else:
@@ -164,7 +159,6 @@ class SpotifyInteractor():
             # Start playback with offset
             mixer.fadeout(3000)
             time.sleep(3.5)
-            mixer.music.load("Songs\\LocalSongsMP3\\TestSong.mp3")
             mixer.music.load("Songs\\LocalSongsMP3\\" + self.sanitizeFilename(song_url) + ".mp3")
             
             mixer.music.play(loops = -1, fade_ms = 3000)
@@ -172,7 +166,7 @@ class SpotifyInteractor():
         print("started playback")
 
         # Wait until beat drop
-        print_time = time.monotonic() + song_time
+        print_time = time.monotonic() + song_time + 0.5
         while time.monotonic() < print_time and self.roundLoop:
             remaining_time = print_time - time.monotonic()
             print(f"Time until beat drop: {remaining_time:.2f} seconds")
@@ -359,7 +353,7 @@ class SpotifyInteractor():
 
         fileName = self.getPlaylistFileFromSettings()
 
-        songNames = open("Songs\\" + fileName, "r")
+        songNames = open("Songs\\" + fileName, "w")
         songNames.writelines(songs)
         songNames.close()
 
@@ -439,19 +433,21 @@ class SpotifyInteractor():
     # Maybe make it fade?
     def setVolumeHigh(self):
         '''Sets the volume to the high volume'''
+        print("HI")
         settingFile = open("Config\\settings", "r")
         fileLines = settingFile.readlines()
         settingFile.close()
         volume = int(fileLines[0][0:3])
-        mixer.music.set_volume(volume)
+        mixer.music.set_volume(volume / 100)
 
     def setVolumeLow(self):
         '''Sets the volume to the low volume'''
+        print("LO")
         settingFile = open("Config\\settings", "r")
         fileLines = settingFile.readlines()
         settingFile.close()
         volume = int(fileLines[0][3:6])
-        mixer.music.set_volume(volume)
+        mixer.music.set_volume(volume / 100)
 
     def pausePlay(self):
         if mixer.music.get_busy():
