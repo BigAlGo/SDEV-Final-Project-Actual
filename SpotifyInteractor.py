@@ -94,8 +94,8 @@ class SpotifyInteractor():
         # Adjust round timing based on game type
         round_times = {
             "Normal": (30, 13, 45, 30, 25),
-            "Swift": (30, 5, 45, 30, 9),
-            "Spike": (11, 4, 20, 20, 7)
+            "Swift" : (30, 5, 45, 30, 9),
+            "Spike" : (11, 4, 20, 20, 7)
         }
         first_round_time, half_time_round, half_time_time, normal_round_time, over_time_round = round_times.get(game_type, (30, 13, 45, 30, 25))
 
@@ -124,11 +124,6 @@ class SpotifyInteractor():
                 play_after_time += normal_round_time - song_time
             print("Normal round, song starts in:", normal_round_time - (time.monotonic() - round_start_time))
 
-        # Ensure play_after_time is in the future
-        if time.monotonic() > play_after_time:
-            print("Warning: play_after_time has already passed!")
-            play_after_time = time.monotonic() + 0.1  # Small delay to avoid immediate playback
-
         if play_into_time == 0:
             # Wait for play_after_time
             if time.monotonic() <= play_after_time - 3:
@@ -148,7 +143,7 @@ class SpotifyInteractor():
 
             # Start playback
             self.setVolumeHigh()
-            mixer.music.load("Songs\\LocalSongsMP3\\" + self.sanitizeFilename(song_url) + ".mp3")
+            mixer.music.load("Songs\\LocalSongsOGG\\" + self.sanitizeFilename(song_url) + ".ogg")
             self.setVolumeHigh()
 
             if song_time < 3:
@@ -157,11 +152,45 @@ class SpotifyInteractor():
                 mixer.music.play(loops = -1, fade_ms = 3000)
         else:
             # Start playback with offset
-            mixer.fadeout(3000)
-            time.sleep(3.5)
-            mixer.music.load("Songs\\LocalSongsMP3\\" + self.sanitizeFilename(song_url) + ".mp3")
-            
-            mixer.music.play(loops = -1, fade_ms = 3000)
+            time_until_play = play_after_time - time.monotonic()
+            fadeout_time = 2.25
+
+            # Fade out current song and wait
+            if time_until_play > fadeout_time:
+                mixer.music.fadeout(int(fadeout_time * 1000))
+                time.sleep(fadeout_time)
+            else:
+                mixer.music.fadeout(int(max(0, time_until_play) * 1000))
+                time.sleep(max(0, time_until_play))
+
+            # Load and prepare the new song
+            song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(song_url) + ".ogg"
+            mixer.music.load(song_path)
+
+            # Set the position in the song
+            mixer.music.play(loops = -1, fade_ms = 0)
+            mixer.music.set_pos(play_into_time)
+
+            # Calculate fade-in time based on how much time until beat drop
+            time_until_beat = song_time - play_into_time
+            if time_until_beat < fadeout_time:
+                fade_in = max(0.1, time_until_beat / 3)
+            else:
+                fade_in = fadeout_time
+
+            # Pause immediately and fade in manually by adjusting volume
+            mixer.music.set_volume(0)
+            start_time = time.monotonic()
+            fade_end = start_time + fade_in
+
+            # Gradually increase volume
+            while time.monotonic() < fade_end and self.roundLoop:
+                elapsed = time.monotonic() - start_time
+                volume = min(self.getVolumeHigh, elapsed / fade_in)
+                mixer.music.set_volume(volume)
+                time.sleep(0.05)
+
+            self.setVolumeHigh()
 
         print("started playback")
 
@@ -321,15 +350,15 @@ class SpotifyInteractor():
             songUrls.append(line.split(" ")[0])
 
         cwd = os.getcwd()
-        LocalSongs = cwd + "\\Songs\\LocalSongsMP3"
+        LocalSongs = cwd + "\\Songs\\LocalSongsOGG"
 
         # Getting the number of songs in master vs in local
         fileSongs = len(os.listdir(LocalSongs))
         nameSongs = len(songUrls)
         numberOfSongs = nameSongs - fileSongs
 
-        # Assumes 15 sec per song to download
-        timeSec = 15 * numberOfSongs
+        # Assumes 30 sec per song to download
+        timeSec = 30 * numberOfSongs
         
         timeMinute = int(timeSec / 60.0)
         timeSec = timeSec % 60
@@ -433,7 +462,6 @@ class SpotifyInteractor():
     # Maybe make it fade?
     def setVolumeHigh(self):
         '''Sets the volume to the high volume'''
-        print("HI")
         settingFile = open("Config\\settings", "r")
         fileLines = settingFile.readlines()
         settingFile.close()
@@ -442,12 +470,25 @@ class SpotifyInteractor():
 
     def setVolumeLow(self):
         '''Sets the volume to the low volume'''
-        print("LO")
         settingFile = open("Config\\settings", "r")
         fileLines = settingFile.readlines()
         settingFile.close()
         volume = int(fileLines[0][3:6])
         mixer.music.set_volume(volume / 100)
+
+    def getVolumeHigh(self):
+        '''Gets the volume from the settings'''
+        settingFile = open("Config\\settings", "r")
+        fileLines = settingFile.readlines()
+        settingFile.close()
+        return int(fileLines[0][0:3] / 100)
+
+    def getVolumeLow(self):
+        '''Gets the volume from the settings'''
+        settingFile = open("Config\\settings", "r")
+        fileLines = settingFile.readlines()
+        settingFile.close()
+        return int(fileLines[0][3:6] / 100)
 
     def pausePlay(self):
         if mixer.music.get_busy():
@@ -467,8 +508,8 @@ class SpotifyInteractor():
         cwdUser = cwd[:cwd[9:].find("\\") + 9]
 
         spotdlPath = cwdUser + "\\AppData\\Roaming\\Python\\Python313\\Scripts\\spotdl.exe"
-        outputPath = cwd + "\\Songs\\LocalSongsMP3"
-        fileName = self.sanitizeFilename(url) + ".mp3"
+        outputPath = cwd + "\\Songs\\LocalSongsOGG"
+        fileName = self.sanitizeFilename(url) + ".ogg"
         
         # if file already exists
         for file in os.listdir(outputPath):
@@ -476,23 +517,23 @@ class SpotifyInteractor():
                 return
         try:
             try:
-                subprocess.run([spotdlPath, url, "--output", outputPath], check=True)
+                subprocess.run([spotdlPath, url, "--format", "ogg", "--output", outputPath], check=True)
             except FileNotFoundError:
-                subprocess.run([spotdlPath.replace("Roaming", "Local\\Programs"), url, "--output", outputPath], check=True)
+                subprocess.run([spotdlPath.replace("Roaming", "Local\\Programs"), url, "--format", "ogg", "--output", outputPath], check=True)
 
 
             # Renaming the file
-            newFilePath = os.path.join(outputPath, fileName)
+            newFilePath = os.path.join(outputPath, fileName) 
 
             # List all files in the directory
-            mp3_files = os.listdir(outputPath)
+            ogg_files = os.listdir(outputPath)
 
             # find the most recently modified file
             latest_file = None
             latest_mtime = 0
 
-            # Loop through the filtered mp3 files to find the one with the most recent modification
-            for file in mp3_files:
+            # Loop through the filtered ogg files to find the one with the most recent modification
+            for file in ogg_files:
                 file_path = os.path.join(outputPath, file)
                 file_mtime = os.path.getmtime(file_path)
 
@@ -521,7 +562,7 @@ if __name__ == "__main__":
     print("init time: ", time.time() - startTime)
     startTime = time.time()
 
-    mixer.music.load("Songs\\LocalSongsMP3\\TestSong.mp3")
+    mixer.music.load("Songs\\LocalSongsOGG\\TestSong.ogg")
 
     print("load time: ", time.time() - startTime)
     # startTime = time.time()
@@ -544,5 +585,4 @@ if __name__ == "__main__":
     print("unlo time: ", time.time() - startTime)'
     '''
     spotifyIntern = SpotifyInteractor(1920, 1080)
-    spotifyIntern.downloadSong("https://open.spotify.com/track/4ZPwjq0CdxbWFNycxnSUJc")
     spotifyIntern.downloadSavedSongs()
