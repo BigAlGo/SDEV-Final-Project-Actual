@@ -45,6 +45,7 @@ class SpotifyInteractor():
         self.nextSong = None
         self.roundLoop = False
         self.savedKey = None
+        self.paused = False
 
     def roundStartHotKeyPressed(self):
         print("Button pressed")
@@ -142,6 +143,7 @@ class SpotifyInteractor():
                 randNum += 1 # to not kill the cpu
 
             # Start playback
+            self.paused = False
             self.setVolumeHigh()
             mixer.music.load("Songs\\LocalSongsOGG\\" + self.sanitizeFilename(song_url) + ".ogg")
             self.setVolumeHigh()
@@ -236,10 +238,10 @@ class SpotifyInteractor():
             keyboard.add_hotkey(endKey, callback = self.stopRoundLoop)
             keyboard.add_hotkey(lowKey, callback = self.setVolumeLow)
             keyboard.add_hotkey(highKey, callback = self.setVolumeHigh)
-            keyboard.add_hotkey(pauseKey, callback = lambda: print("pauseKey"))
+            keyboard.add_hotkey(pauseKey, callback = self.pauseToggle, trigger_on_release = True)
 
             return True
-        except (ValueError):
+        except ValueError:
             return False
         
     def hotKeyRecord(self):
@@ -339,7 +341,28 @@ class SpotifyInteractor():
         masterFile.close()
         return uniqueSongs
     
+    def downloadNewSongs(self, songUrls):
+        '''Takes in a lise of songUrls and downloads them'''
+
+        if len(songUrls) == 0:
+            return
+        # Getting the number of songs in master vs in local
+        numberOfSongs = len(songUrls)
+
+        # Assumes 30 sec per song to download
+        timeSec = 30 * numberOfSongs
+        
+        timeMinute = int(timeSec / 60.0)
+        timeSec = timeSec % 60
+
+        if (numberOfSongs >= 1):
+            messagebox.showinfo("Downloading Songs", f"The program will download {numberOfSongs} songs from spotify, estimated time: {timeMinute} minute(s) and {timeSec} seconds. It may be longer depending on your internet. If the program says it is not responding during this time, it is probebly still downloading")
+
+        for url in songUrls:
+            self.downloadSong(url)
+
     def downloadSavedSongs(self):
+        '''Downloades the songs saved in masterSongFile'''
         songsFile = open("Songs\\masterSongFile", "r")
         songLines = songsFile.readlines()
         songsFile.close()
@@ -458,8 +481,22 @@ class SpotifyInteractor():
         '''Resets the rounds and pauses playback'''
         mixer.music.fadeout(5000)
         self.roundNumber = 1
+
+    def playSong(self, url, fade = 0):
+        song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(url) + ".ogg"
+        mixer.music.load(song_path)
+
+        mixer.music.play(loops = -1, fade_ms = fade)
+
+    def pauseToggle(self, fade = 1000):
+        if self.paused:
+            mixer.music.play(-1, fade_ms = fade)
+        else:
+            mixer.music.fadeout(fade)
+
+        self.paused = not self.paused
     
-    # Maybe make it fade?
+    # todo maybe make it fade?
     def setVolumeHigh(self):
         '''Sets the volume to the high volume'''
         settingFile = open("Config\\settings", "r")

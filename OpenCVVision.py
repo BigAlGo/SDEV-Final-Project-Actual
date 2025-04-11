@@ -166,7 +166,6 @@ class OpenCVVision():
 
                         # Finds if the box is part of the banner
                         roundType = self.detectRoundType(x_pe, y_pe, w_pe, h_pe)
-                        # todo Add more here
                         if roundType and roundType[0] == "1":
                             print("Buy Phase: " + str(roundType))
                             print(f"[{x_pe:.2f}", f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")

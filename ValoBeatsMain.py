@@ -5,8 +5,8 @@ from tkinter import simpledialog
 
 import SpotifyInteractor as SI
 
-#todo all the hotkeys that go with local playing such as turning the music down 
-#todo when setting songtimes, have an option to play it in pygame
+import keyboard
+
 #todo when redoing song times, allow them to choose a certain song to remove
 
 #todo add the ability to loop through the playlist song file 
@@ -239,28 +239,58 @@ def saveSettings():
     
     # Asks how you want to input the songs
     uniqueSongs = spotifyIntern.getPlaylistLinks(fileName)
+    
+    spotifyIntern.downloadNewSongs(uniqueSongs)
+
     if len(uniqueSongs) != 0:
-        howAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to use your spotify in your browser set the timing for all the songs?")
+        manualAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to manually set the timing for all the songs?")
+        if manualAnswer == False:
+            howAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to use your spotify in your browser set the timing for all the songs?")
 
     # Asks What time you want each new song to start at
     for song in uniqueSongs:
-        if howAnswer == True:
-            # Using browser data
-            correct = False
-            while True:
-                # Loops until we get correct input
-                messagebox.showinfo("Song Timing", "Please go to the time at which you want the song " + spotifyIntern.getNameOfSong(song) + " to start on a device and then click OK")
-                time = spotifyIntern.getSongTime()
-                if (time != -1):
-                    correct = messagebox.askyesnocancel("Song Timeing", "The time you entered is " + str(time) + ". Is this correct?")
+        if manualAnswer == False:
+            if howAnswer == True:
+
+                # Using Spotify in browser
+                correct = False
+                while True:
+                    # Loops until we get correct input
+                    messagebox.showinfo("Song Timing", "Please go to the time at which you want the song " + spotifyIntern.getNameOfSong(song) + " to start on a device and then click OK")
+                    time = spotifyIntern.getSongTime()
+                    if (time != -1):
+                        correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
+                        if (correct == None or correct == True):
+                            break
+                if correct:
+                    # Only add the song if they didn't press cancel
+                    masterSongFile.write(song + " " + str(time) + "\n")
+                    playlistSongFile.write(song + " " + str(time) + "\n")
+            
+            # Using pygame to find the song time
+            elif howAnswer == False:
+
+                correct = False
+                while True:
+                    # Loops until we get correct input
+                    messagebox.showinfo("Song Timing", "After pressing OK, wait until the time you want the song to play and then click any button")
+                    spotifyIntern.playSong(song)
+                    keyboard.read_key()
+                    spotifyIntern.pauseToggle(0)
+
+                    spotifyIntern.get
+                    correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
+                    
                     if (correct == None or correct == True):
                         break
-            if correct != None:
-                # Only add the song if they didn't press cancel
-                masterSongFile.write(song + " " + str(time) + "\n")
-                playlistSongFile.write(song + " " + str(time) + "\n")
+                if correct:
+                    # Only add the song if they didn't press cancel
+                    masterSongFile.write(song + " " + str(time) + "\n")
+                    playlistSongFile.write(song + " " + str(time) + "\n")
 
-        elif howAnswer ==  False:
+
+        # because answer can be None
+        elif manualAnswer == True:
             # Using manual input
             timeAnswer = simpledialog.askfloat("Song Timing", "What time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
             if timeAnswer != None:
@@ -269,7 +299,8 @@ def saveSettings():
 
     masterSongFile.close()
 
-    spotifyIntern.downloadSavedSongs()
+    # Probebly dont need this
+    # spotifyIntern.downloadSavedSongs()
 
     mainWindow.deiconify()
 
@@ -340,6 +371,9 @@ def main():
     global mainWindow
     mainWindow = tk.Tk()
     # mainWindow.overrideredirect(1) # If I dont want a window boarder, but it also doent make a moveable window 
+    
+    # Changing the Icon
+    mainWindow.iconbitmap("Images\\ValoBeatsLogo.ico")
 
     # Creates a spotify intern
     global spotifyIntern
