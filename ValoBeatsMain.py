@@ -7,10 +7,12 @@ import SpotifyInteractor as SI
 
 import keyboard
 
-#todo when redoing song times, allow them to choose a certain song to remove
-
-#todo add the ability to loop through the playlist song file 
-#todo fix the bug of the song number being longer than the playlist file
+# add remake window
+# remake singular song using search
+# remake all songs in a playlist
+# remake all master songs
+# on save refresh based on web playlist
+# add a loading bar to downloading songs
 def createSettingsWindow():
     '''Creates the settings window'''
     # Hides main window
@@ -167,7 +169,7 @@ def createHotKeyWindow():
     highKeyText .insert(0, highKey)
 
     saveButton = Button(hotkeyWindow, text = "Save", command = saveHotKeys, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
-    recordButton = Button(hotkeyWindow, text = "Record Hotkey", command = spotifyIntern.hotKeyRecord, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
+    # recordButton = Button(hotkeyWindow, text = "Record Hotkey", command = spotifyIntern.hotKeyRecord, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
     
     # Adding the elements
     hotkeyCanvas.create_text(50, 50, justify = "center", text = "Play Hotkey")
@@ -183,10 +185,10 @@ def createHotKeyWindow():
     hotkeyCanvas.create_window(235, 170, window = highKeyText)
 
     hotkeyCanvas.create_window(270, 250, window = saveButton)
-    hotkeyCanvas.create_window(170, 120, window = recordButton)
+    # hotkeyCanvas.create_window(170, 120, window = recordButton) doesnt work, probebly remove
 
 def settingsDestroyed():
-    '''When the settings window is manually closed and they didnt click save, 
+    '''When the settings window is manually closed and they didn't click save, 
     reopen the main window and remake the hotkeys'''
     mainWindow.deiconify()
     spotifyIntern.makeHotKeys()
@@ -222,85 +224,84 @@ def saveSettings():
     settingsFile.close()
 
     if not spotifyIntern.isValidPlaylist():
-        messagebox.showwarning("WARNING", playListLinkText.get() + " is not a valid public playList link, please try again")
+        messagebox.showerror("Invalid Input", playListLinkText.get() + " is not a valid public playList link, please try again")
         return
 
     # Checking if a device is open
     devices = spotifyIntern.getDevices()
-    if not devices['devices']:
-        messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
+    if devices == False:
+        messagebox.showwarning("Connection Failed", "Unable to connect to the Spotify servers, skipping downloading and checking of songs")
+    elif devices['devices'] == None:
+        messagebox.showerror("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
         return
+    else:
+        masterSongFile = open("Songs\\masterSongFile", "a")
 
-    masterSongFile = open("Songs\\masterSongFile", "a")
+        # Createing new playlist Song File
+        fileName = spotifyIntern.playlistURLToFileName(playListLinkText.get())
+        playlistSongFile = open("Songs\\" + fileName, "a")
+        
+        # Asks how you want to input the songs
+        uniqueSongs = spotifyIntern.updatePlaylistFile(fileName)
+        
+        spotifyIntern.downloadNewSongs(uniqueSongs)
 
-    # Createing new playlist Song File
-    fileName = spotifyIntern.playlistURLToFileName(playListLinkText.get())
-    playlistSongFile = open("Songs\\" + fileName, "a")
-    
-    # Asks how you want to input the songs
-    uniqueSongs = spotifyIntern.getPlaylistLinks(fileName)
-    
-    spotifyIntern.downloadNewSongs(uniqueSongs)
+        if len(uniqueSongs) != 0:
+            manualAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to manually set the timing for all the songs?")
+            if manualAnswer == False:
+                howAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to use your spotify in your browser set the timing for all the songs?")
 
-    if len(uniqueSongs) != 0:
-        manualAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to manually set the timing for all the songs?")
-        if manualAnswer == False:
-            howAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to use your spotify in your browser set the timing for all the songs?")
+        # Asks What time you want each new song to start at
+        for song in uniqueSongs:
+            if manualAnswer == False:
+                if howAnswer == True:
 
-    # Asks What time you want each new song to start at
-    for song in uniqueSongs:
-        if manualAnswer == False:
-            if howAnswer == True:
+                    # Using Spotify in browser
+                    correct = False
+                    while True:
+                        # Loops until we get correct input
+                        messagebox.showinfo("Song Timing", "Please go to the time at which you want the song " + spotifyIntern.getNameOfSong(song) + " to start on a device and then click OK")
+                        time = spotifyIntern.getSongTime()
+                        if (time != -1):
+                            correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
+                            if (correct == None or correct == True):
+                                break
+                    if correct:
+                        # Only add the song if they didn't press cancel
+                        masterSongFile.write(song + " " + str(time) + "\n")
+                        playlistSongFile.write(song + " " + str(time) + "\n")
+                
+                # Using pygame to find the song time
+                elif howAnswer == False:
 
-                # Using Spotify in browser
-                correct = False
-                while True:
-                    # Loops until we get correct input
-                    messagebox.showinfo("Song Timing", "Please go to the time at which you want the song " + spotifyIntern.getNameOfSong(song) + " to start on a device and then click OK")
-                    time = spotifyIntern.getSongTime()
-                    if (time != -1):
+                    correct = False
+                    while True:
+                        # Loops until we get correct input
+                        messagebox.showinfo("Song Timing", "After pressing OK, wait until the time you want the song to play and then click any button")
+                        spotifyIntern.playSong(song)
+                        # Waits for any key press
+                        keyboard.read_key()
+                        spotifyIntern.pauseToggle(0)
+
+                        
+                        time = spotifyIntern.getLocalPlayTime()
                         correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
+                        
                         if (correct == None or correct == True):
                             break
-                if correct:
-                    # Only add the song if they didn't press cancel
-                    masterSongFile.write(song + " " + str(time) + "\n")
+                    if correct:
+                        # Only add the song if they didn't press cancel
+                        masterSongFile.write(song + " " + str(time) + "\n")
+                        playlistSongFile.write(song + " " + str(time) + "\n")
+
+            elif manualAnswer:
+                # Using manual input
+                timeAnswer = simpledialog.askfloat("Song Timing", "What time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
+                if timeAnswer != None:
+                    masterSongFile.write(song + " " + str(timeAnswer) + "\n")
                     playlistSongFile.write(song + " " + str(time) + "\n")
-            
-            # Using pygame to find the song time
-            elif howAnswer == False:
-
-                correct = False
-                while True:
-                    # Loops until we get correct input
-                    messagebox.showinfo("Song Timing", "After pressing OK, wait until the time you want the song to play and then click any button")
-                    spotifyIntern.playSong(song)
-                    keyboard.read_key()
-                    spotifyIntern.pauseToggle(0)
-
-                    spotifyIntern.get
-                    correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
-                    
-                    if (correct == None or correct == True):
-                        break
-                if correct:
-                    # Only add the song if they didn't press cancel
-                    masterSongFile.write(song + " " + str(time) + "\n")
-                    playlistSongFile.write(song + " " + str(time) + "\n")
-
-
-        # because answer can be None
-        elif manualAnswer == True:
-            # Using manual input
-            timeAnswer = simpledialog.askfloat("Song Timing", "What time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
-            if timeAnswer != None:
-                masterSongFile.write(song + " " + str(timeAnswer) + "\n")
-                playlistSongFile.write(song + " " + str(time) + "\n")
 
     masterSongFile.close()
-
-    # Probebly dont need this
-    # spotifyIntern.downloadSavedSongs()
 
     mainWindow.deiconify()
 

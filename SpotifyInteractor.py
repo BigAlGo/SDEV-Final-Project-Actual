@@ -80,12 +80,13 @@ class SpotifyInteractor():
         file_name = self.getPlaylistFileFromSettings()
         with open("Songs\\" + file_name, "r") as song_file:
             if self.nextSong is None:
-                song_line = song_file.readlines()[self.songNumber]
+                songLines = song_file.readlines()
+                songLine = songLines[self.songNumber]
             else:
-                song_line = self.nextSong
+                songLine = self.nextSong
 
         # Extract song time from the song line
-        song_time = float(song_line.split(" ")[-1].strip())
+        song_time = float(songLine.split(" ")[-1].strip())
 
         # Determine game type
         file = open("Config\\settings", "r")
@@ -100,7 +101,7 @@ class SpotifyInteractor():
         }
         first_round_time, half_time_round, half_time_time, normal_round_time, over_time_round = round_times.get(game_type, (30, 13, 45, 30, 25))
 
-        song_url = song_line.split(" ")[0]
+        song_url = songLine.split(" ")[0]
 
         # Determine when to play the song
         play_after_time = round_start_time
@@ -209,11 +210,17 @@ class SpotifyInteractor():
 
         # Update song number
         if self.nextSong is None:
-            self.songNumber += 1
+            # Loops through the song file
+            if self.songNumber > len(songLines) + 1:
+                songNumber = 1
+            else:
+                self.songNumber += 1
         else:
             self.nextSong = None
 
+        
         self.roundNumber += 1
+        
         
         if self.roundLoop:
             # I am still in a thread so while loops don't affect the overall program
@@ -268,7 +275,73 @@ class SpotifyInteractor():
             return True
         except spotipy.exceptions.SpotifyException:
             return False
+        except:
+            messagebox.showwarning("Connection failed", "Unable to check if the playlist is valid because we are unable to connect to the Spotify servers, we will assume that the link is correct")
+            return True
 
+    def updatePlaylistFile(self, playlistFileName):
+        '''Returns a list of lings to songs that have not been saved but are in the spotify playlist
+        and writes all songs that are in the online playlist from the master file, to the playlist file'''        
+        
+        # Creates a list of all the saved songs 
+        songsFile = open("Songs\\masterSongFile", "r")
+        masterLines = songsFile.readlines()
+        songsFile.close()
+
+        masterSongs = []
+        for line in masterLines:
+            masterSongs.append(line[:line.find(" ")])
+
+        songsFile = open("Songs\\" + playlistFileName, "r")
+        oldLines = songsFile.readlines()
+        songsFile.close()
+
+        oldSongs = []
+        for line in oldLines:
+            oldSongs.append(line[:line.find(" ")])
+        
+        # Creates a list of all the songs in the playlist
+        # Reads the url from settings
+        settingsFile = open("Config\\settings", "r")
+        playlistURL = settingsFile.readlines()[2]
+        settingsFile.close()
+
+        # Creates a list of new songs
+        tracks = self.spotifyClient.playlist_tracks(playlistURL)['items']
+
+        # Extract track URLs
+        newSongs = []
+        for track in tracks:
+            if track["track"]:
+                newSongs.append(track["track"]["external_urls"]["spotify"])
+        
+    
+        playlistFile = open("Songs\\" + playlistFileName, "w")
+        masterFile = open("Songs\\masterSongFile", "r")
+
+        uniqueSongs = []
+        found = False
+        for newSong in newSongs:
+            for masterSong in masterSongs:
+                if newSong == masterSong:
+                    # Found in master songs, refind the whole line, then add to playlist file
+                    masterFile.seek(0)
+                    for masterLine in masterFile.readlines():
+                        if masterLine.find(newSong) != -1:
+                            newLine = masterLine
+                            break
+                    playlistFile.write(newLine)
+                    found = True
+                    break
+            
+            if not found:
+                # Not in master or playlist file, ask what time
+                uniqueSongs.append(newSong)
+        
+        playlistFile.close()
+        masterFile.close()
+        return uniqueSongs
+    
     def getPlaylistLinks(self, playlistFileName):
         '''Returns a list of lings to songs that have not been saved but are in the spotify playlist
         and writes songs from the master file that are not in the playlist file, to the playlist file'''        
@@ -423,8 +496,14 @@ class SpotifyInteractor():
 
     def getDevices(self):
         '''Gets the divices signed into the account'''
-        self.devices = self.spotifyClient.devices()
-        return self.devices
+        try:
+            self.devices = self.spotifyClient.devices()
+            return self.devices
+        except:
+            # Unable to connect to Spotify
+            messagebox.showwarning()
+            return False
+
     
     def getNameOfSong(self, url):
         '''Returns the name of a song given the url'''
