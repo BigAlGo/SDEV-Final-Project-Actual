@@ -128,16 +128,15 @@ class OpenCVVision():
             while self.running:
                 screenshot = sct.grab(self.captureRegion) # Takes Screenshot
                 img = np.array(screenshot) # Convert to a usable format 
-                imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # Convert to HSV
-                threshold = cv2.inRange(imgHSV, (0, 0, 235), (180, 36, 255)) # Threshold out evrything exept white
-                blurred = cv2.GaussianBlur(threshold, (5, 5), 0)# Reduce noise
-                edges = cv2.Canny(blurred, threshold1 = 50, threshold2 = 150) # Finds edges
+                imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # Convert to RGB
+                threshold = cv2.inRange(imgRGB, (210, 203, 202), (255, 255, 255)) # Threshold out evrything exept white
+                edges = cv2.Canny(threshold, threshold1=50, threshold2=150) # Finds edges
                 boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
+
                 currentBoxes = []
 
-                # Filters out small coutours and converts to percentage
                 for contour in boxes:
-                    if cv2.contourArea(contour) > 100:
+                    if cv2.contourArea(contour) > 100:  # Filter small contours
                         x, y, w, h = cv2.boundingRect(contour)
 
                         # Convert to percentage of screen size
@@ -147,6 +146,26 @@ class OpenCVVision():
                         h_pe = h / self.screenHeight
 
                         currentBoxes.append((x_pe, y_pe, w_pe, h_pe))
+
+                if len(currentBoxes) == 0:
+                    # If we don't see any thing, switch to way of seeing white more clearly
+                    imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # Convert to HSV
+                    threshold = cv2.inRange(imgHSV, (0, 0, 248), (180, 36, 255)) # Threshold out evrything exept white
+                    blurred = cv2.GaussianBlur(threshold, (5, 5), 0)  # Reduce noise
+                    edges = cv2.Canny(blurred, threshold1=50, threshold2=150) # Finds edges
+                    boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
+
+                    for contour in boxes:
+                        if cv2.contourArea(contour) > 100:  # Filter small contours
+                            x, y, w, h = cv2.boundingRect(contour)
+
+                            # Convert to percentage of screen size
+                            x_pe = x / self.screenWidth
+                            y_pe = y / self.screenHeight
+                            w_pe = w / self.screenWidth
+                            h_pe = h / self.screenHeight
+
+                            currentBoxes.append((x_pe, y_pe, w_pe, h_pe))
 
                 # Compare current boxes with previous boxes
                 for (x, y, w, h) in currentBoxes:
@@ -195,8 +214,6 @@ class OpenCVVision():
         with mss.mss() as sct:
             key = cv2.waitKey(30)
             while not (key == ord('q') or key == 27):
-                [7.08, 11.85, 1.25, 2.31]
-
                 print("frame")
                 screenshot = sct.grab(self.captureRegion) # Takes Screenshot
                 img = np.array(screenshot) # Convert to a usable format 
@@ -280,6 +297,6 @@ def DoOrDie():
     print("HE DID")
 
 if __name__ == "__main__":
-    opencv = OpenCVVision(1920, 1080, DoOrDie)
-    # opencv = OpenCVVision(1366, 768, DoOrDie)
+    # opencv = OpenCVVision(1920, 1080, DoOrDie)
+    opencv = OpenCVVision(1366, 768, DoOrDie)
     opencv.debug()

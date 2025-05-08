@@ -12,7 +12,7 @@ import keyboard
 # remake all songs in a playlist
 # remake all master songs
 # add a loading bar to downloading songs
-# Make the que a list 
+# Make the que a list - Done Test Me
 def createSettingsWindow():
     '''Creates the settings window'''
     # Hides main window
@@ -25,6 +25,7 @@ def createSettingsWindow():
     global settingsWindow
     settingsWindow = tk.Toplevel()
     settingsWindow.title("Settings")
+    settingsWindow.iconbitmap("Images\\ValoBeatsLogo.ico")
     
     # Calculates the middle of the screen
     width = mainWindow.winfo_screenwidth() / 2
@@ -109,6 +110,7 @@ def createHotKeyWindow():
     global hotkeyWindow
     hotkeyWindow = tk.Toplevel()
     hotkeyWindow.title("Hot Keys")
+    hotkeyWindow.iconbitmap("Images\\ValoBeatsLogo.ico")
 
     # Calculates the middle of the screen
     width = mainWindow.winfo_screenwidth() / 2
@@ -187,7 +189,7 @@ def createHotKeyWindow():
     hotkeyCanvas.create_window(270, 250, window = saveButton)
     # hotkeyCanvas.create_window(170, 120, window = recordButton) doesnt work, probebly remove
 
-def settingsDestroyed(e):
+def settingsDestroyed(e = None):
     '''When the settings window is manually closed and they didn't click save, 
     reopen the main window and remake the hotkeys'''
     mainWindow.deiconify()
@@ -253,9 +255,8 @@ def saveSettings():
         # Asks What time you want each new song to start at
         for song in uniqueSongs:
             if manualAnswer == False:
+                # Using Spotify in browser
                 if howAnswer == True:
-
-                    # Using Spotify in browser
                     correct = False
                     while True:
                         # Loops until we get correct input
@@ -283,7 +284,6 @@ def saveSettings():
                         
                         time = spotifyIntern.getLocalPlayTime()
                         spotifyIntern.pauseToggle()
-
                         
                         correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
                         
@@ -293,16 +293,16 @@ def saveSettings():
                         # Only add the song if they didn't press cancel
                         masterSongFile.write(song + " " + str(time) + "\n")
                         playlistSongFile.write(song + " " + str(time) + "\n")
-
+            # Using manual input
             elif manualAnswer:
-                # Using manual input
                 timeAnswer = simpledialog.askfloat("Song Timing", "What time would you like the song " + spotifyIntern.getNameOfSong(song) + " to start at?")
                 if timeAnswer != None:
                     masterSongFile.write(song + " " + str(timeAnswer) + "\n")
                     playlistSongFile.write(song + " " + str(time) + "\n")
 
-    masterSongFile.close()
+        masterSongFile.close()
 
+    # Show main window
     mainWindow.deiconify()
 
     settingsWindow.destroy()
@@ -350,6 +350,13 @@ def addSongNext():
     if found:
         spotifyIntern.setNextSong(newLine)
         nextSongText.delete(0, "end")
+        message = "Song found and added to que. Current que is: "
+
+        for song in spotifyIntern.getNextSongs():
+            message += spotifyIntern.getNameOfSong(song[:song.index(" ")]) + ", "
+        message = message[:-2]
+
+        messagebox.showinfo("Search", message)
     else:
         messagebox.showinfo("Search", "No saved song was found using the query: \"" + nextSongText.get() + "\". try narrowing it down by searching with the author as well")
 
@@ -358,15 +365,12 @@ def remakeSongFile():
     if (answer == "yes"):
         spotifyIntern.deleteSongFile()
 
+def endProgram():
+    mainWindow.quit()
+    mainWindow.destroy()
 
 def main():
     '''Main Function creates the main window'''
-    '''Config file is formatted so that the 
-    First line is the volume
-    Second line is the hotkey
-    Third line is the type of game 
-    Forth line is the playlist url
-    '''
 
     # Creates main window
     global mainWindow
@@ -426,6 +430,7 @@ def main():
 
     settingsButton = Button(mainWindow, text = "Open Settings", bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = createSettingsWindow)
 
+    closeButton = Button(mainWindow, text = "Close", bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = endProgram)
     # Adds each element to the canvas
     mainCanvas.create_window(80, 50, window = shuffleButton)
     mainCanvas.create_window(80, 75, window = resetRoundsButton)
@@ -434,6 +439,8 @@ def main():
     mainCanvas.create_window(500, 126, window = nextSongText)
 
     mainCanvas.create_window(450, 300, window = settingsButton)
+
+    mainCanvas.create_window(320, 270, window = closeButton)
 
     # Wait for input
     mainWindow.mainloop()

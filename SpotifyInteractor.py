@@ -38,17 +38,12 @@ class SpotifyInteractor():
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
-        # self.devices = self.spotifyClient.devices()
-        # while not self.devices['devices']:
-            # messagebox.showwarning("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
-            # self.devices = self.spotifyClient.devices()
-        self.nextSong = None
+        self.nextSongs = []
         self.roundLoop = False
         self.savedKey = None
         self.paused = False
 
     def roundStartHotKeyPressed(self):
-        print("Button pressed")
         self.startRoundLoop()
 
     def startRoundLoop(self):
@@ -73,17 +68,20 @@ class SpotifyInteractor():
         print("song #" + str(self.songNumber))
         print("round #" + str(self.roundNumber))
 
-        # Get the current device
-        # device_id = self.devices['devices'][0]['id']
-
         # Get the playlist file
-        file_name = self.getPlaylistFileFromSettings()
+        # todo
+        try:
+            file_name = self.getPlaylistFileFromSettings()
+        except:
+            messagebox.showerror("Connection Issue", "unable to connect to servers")
+            return
+        
         with open("Songs\\" + file_name, "r") as song_file:
-            if self.nextSong is None:
+            if len(self.nextSongs) == 0:
                 songLines = song_file.readlines()
                 songLine = songLines[self.songNumber]
             else:
-                songLine = self.nextSong
+                songLine = self.nextSongs[0]
 
         # Extract song time from the song line
         song_time = float(songLine.split(" ")[-1].strip())
@@ -209,14 +207,14 @@ class SpotifyInteractor():
         time.sleep(0.5)
 
         # Update song number
-        if self.nextSong is None:
+        if len(self.nextSongs) == 0:
             # Loops through the song file
             if self.songNumber > len(songLines) + 1:
                 songNumber = 1
             else:
                 self.songNumber += 1
         else:
-            self.nextSong = None
+            self.nextSongs.pop(0)
 
         
         self.roundNumber += 1
@@ -495,13 +493,12 @@ class SpotifyInteractor():
         return None
 
     def getDevices(self):
-        '''Gets the divices signed into the account'''
+        '''Gets the devices signed into the account'''
         try:
             self.devices = self.spotifyClient.devices()
             return self.devices
         except:
             # Unable to connect to Spotify
-            messagebox.showwarning()
             return False
 
     
@@ -601,14 +598,14 @@ class SpotifyInteractor():
         settingFile = open("Config\\settings", "r")
         fileLines = settingFile.readlines()
         settingFile.close()
-        return int(fileLines[0][0:3] / 100)
+        return float(fileLines[0][0:3]) // 100
 
     def getVolumeLow(self):
         '''Gets the volume from the settings'''
         settingFile = open("Config\\settings", "r")
         fileLines = settingFile.readlines()
         settingFile.close()
-        return int(fileLines[0][3:6] / 100)
+        return float(fileLines[0][3:6]) // 100
 
     def pausePlay(self):
         if mixer.music.get_busy():
@@ -618,8 +615,14 @@ class SpotifyInteractor():
 
     def setNextSong(self, set):
         '''Sets the next song'''
-        self.nextSong = set
+        self.nextSongs.append(set)
+        self.nextSongs.ind
 
+    def getNextSongs(self):
+        '''Gets a list of the next songs'''
+        return self.nextSongs[:]
+    
+    
     def downloadSong(self, url):
         '''Downloads the song specified by query using spotdl and the command line, if the song already exists then return None'''      
         
