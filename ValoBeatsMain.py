@@ -11,8 +11,8 @@ import keyboard
 # remake singular song using search
 # remake all songs in a playlist
 # remake all master songs
-# on save refresh based on web playlist
 # add a loading bar to downloading songs
+# Make the que a list 
 def createSettingsWindow():
     '''Creates the settings window'''
     # Hides main window
@@ -187,7 +187,7 @@ def createHotKeyWindow():
     hotkeyCanvas.create_window(270, 250, window = saveButton)
     # hotkeyCanvas.create_window(170, 120, window = recordButton) doesnt work, probebly remove
 
-def settingsDestroyed():
+def settingsDestroyed(e):
     '''When the settings window is manually closed and they didn't click save, 
     reopen the main window and remake the hotkeys'''
     mainWindow.deiconify()
@@ -243,7 +243,6 @@ def saveSettings():
         
         # Asks how you want to input the songs
         uniqueSongs = spotifyIntern.updatePlaylistFile(fileName)
-        
         spotifyIntern.downloadNewSongs(uniqueSongs)
 
         if len(uniqueSongs) != 0:
@@ -281,10 +280,11 @@ def saveSettings():
                         spotifyIntern.playSong(song)
                         # Waits for any key press
                         keyboard.read_key()
-                        spotifyIntern.pauseToggle(0)
-
                         
                         time = spotifyIntern.getLocalPlayTime()
+                        spotifyIntern.pauseToggle()
+
+                        
                         correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
                         
                         if (correct == None or correct == True):

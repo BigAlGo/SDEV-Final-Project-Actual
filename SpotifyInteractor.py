@@ -189,7 +189,7 @@ class SpotifyInteractor():
             # Gradually increase volume
             while time.monotonic() < fade_end and self.roundLoop:
                 elapsed = time.monotonic() - start_time
-                volume = min(self.getVolumeHigh, elapsed / fade_in)
+                volume = min(self.getVolumeHigh(), elapsed / fade_in)
                 mixer.music.set_volume(volume)
                 time.sleep(0.05)
 
@@ -320,8 +320,8 @@ class SpotifyInteractor():
         masterFile = open("Songs\\masterSongFile", "r")
 
         uniqueSongs = []
-        found = False
         for newSong in newSongs:
+            found = False
             for masterSong in masterSongs:
                 if newSong == masterSong:
                     # Found in master songs, refind the whole line, then add to playlist file
@@ -521,7 +521,7 @@ class SpotifyInteractor():
         return fileName
     
     def getSongTime(self):
-        ''' Gets the time of the current song playing'''
+        '''Gets the time of the current song playing in spotify'''
         playback = self.spotifyClient.current_playback()
 
         # If somthing is playing
@@ -531,6 +531,10 @@ class SpotifyInteractor():
         else:
             messagebox.showwarning("Song timing", "No song is currently playing.")
             return -1
+        
+    def getLocalPlayTime(self):
+        '''Gets the time of the current song playing in pygame'''
+        return mixer.music.get_pos() / 1000
     
     def sanitizeFilename(self, name):
         '''Replaces invalid filename characters'''
@@ -567,11 +571,11 @@ class SpotifyInteractor():
 
         mixer.music.play(loops = -1, fade_ms = fade)
 
-    def pauseToggle(self, fade = 1000):
-        if self.paused:
-            mixer.music.play(-1, fade_ms = fade)
+    def pauseToggle(self):
+        if not mixer.music.get_busy():
+            mixer.music.unpause()
         else:
-            mixer.music.fadeout(fade)
+            mixer.music.pause()
 
         self.paused = not self.paused
     
