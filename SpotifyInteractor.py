@@ -55,26 +55,26 @@ class SpotifyInteractor():
 
 
     def stopRoundLoop(self):
-        mixer.music.fadeout(2500)
         self.roundLoop = False
         self.vision.stopLoop()
+        self.resetRounds()
 
     def roundStart(self):
         """Plays a song after a specified time"""
         print("roundStart")
         # I am in a thread so while loops don't affect the over all program
 
-        round_start_time = time.monotonic()
+        round_start_time = time.time()
+
         print("song #" + str(self.songNumber))
         print("round #" + str(self.roundNumber))
 
         # Get the playlist file
-        # todo
-        try:
-            file_name = self.getPlaylistFileFromSettings()
-        except:
-            messagebox.showerror("Connection Issue", "unable to connect to servers")
-            return
+        file_name = self.getPlaylistFileFromSettings()
+        if not file_name:
+            settingsFile = open("Config\\settings", "r")
+            file_name = settingsFile.readlines()[3]
+            settingsFile.close()
         
         with open("Songs\\" + file_name, "r") as song_file:
             if len(self.nextSongs) == 0:
@@ -110,35 +110,36 @@ class SpotifyInteractor():
                 play_into_time = song_time - first_round_time
             else:
                 play_after_time += first_round_time - song_time
-            print("First round, song starts in:", first_round_time - (time.monotonic() - round_start_time))
+            print("First round, song starts in:", first_round_time - (time.time() - round_start_time))
         elif self.roundNumber == half_time_round or self.roundNumber >= over_time_round:
             if song_time > half_time_time:
                 play_into_time = song_time - half_time_time
             else:
                 play_after_time += half_time_time - song_time
-            print("Half-time round, song starts in:", half_time_time - (time.monotonic() - round_start_time))
+            print("Half-time round, song starts in:", half_time_time - (time.time() - round_start_time))
         else:
             if song_time > normal_round_time:
                 play_into_time = song_time - normal_round_time
             else:
                 play_after_time += normal_round_time - song_time
-            print("Normal round, song starts in:", normal_round_time - (time.monotonic() - round_start_time))
+            print("Normal round, song starts in:", normal_round_time - (time.time() - round_start_time))
 
         if play_into_time == 0:
             # Wait for play_after_time
-            if time.monotonic() <= play_after_time - 3:
+            print(play_after_time - time.time())
+            if play_after_time - time.time() <= 3:
                 # if less than 3 sec before play fade out quick
-                mixer.music.fadeout(int(((play_after_time - time.monotonic()) / 3) * 1000))
+                mixer.music.fadeout(int(((play_after_time - time.time()) / 3) * 1000))
             else:
                 # else wait for the time then fade out slow
-                while time.monotonic() > play_after_time - 3 and self.roundLoop:
-                    print(f"Waiting... {play_after_time - time.monotonic():.2f} seconds left")
+                while time.time() > play_after_time - 3 and self.roundLoop:
+                    print(f"Waiting... {play_after_time - time.time():.2f} seconds left")
                     time.sleep(0.05)
                 mixer.music.fadeout(2500)
             # Wait until ready to play
             randNum = 0
-            while time.monotonic() < play_after_time and self.roundLoop:
-                print(f"Waiting... {play_after_time - time.monotonic():.2f} seconds left")
+            while time.time() < play_after_time and self.roundLoop:
+                print(f"Waiting... {play_after_time - time.time():.2f} seconds left")
                 randNum += 1 # to not kill the cpu
 
             # Start playback
@@ -153,7 +154,7 @@ class SpotifyInteractor():
                 mixer.music.play(loops = -1, fade_ms = 3000)
         else:
             # Start playback with offset
-            time_until_play = play_after_time - time.monotonic()
+            time_until_play = play_after_time - time.time()
             fadeout_time = 2.25
 
             # Fade out current song and wait
@@ -181,12 +182,12 @@ class SpotifyInteractor():
 
             # Pause immediately and fade in manually by adjusting volume
             mixer.music.set_volume(0)
-            start_time = time.monotonic()
+            start_time = time.time()
             fade_end = start_time + fade_in
 
             # Gradually increase volume
-            while time.monotonic() < fade_end and self.roundLoop:
-                elapsed = time.monotonic() - start_time
+            while time.time() < fade_end and self.roundLoop:
+                elapsed = time.time() - start_time
                 volume = min(self.getVolumeHigh(), elapsed / fade_in)
                 mixer.music.set_volume(volume)
                 time.sleep(0.05)
@@ -196,11 +197,12 @@ class SpotifyInteractor():
         print("started playback")
 
         # Wait until beat drop
-        print_time = time.monotonic() + song_time + 0.5
-        while time.monotonic() < print_time and self.roundLoop:
-            remaining_time = print_time - time.monotonic()
+        print_time = time.time() + song_time + 0.5
+        randNum = 0
+        while time.time() < print_time and self.roundLoop:
+            remaining_time = print_time - time.time()
             print(f"Time until beat drop: {remaining_time:.2f} seconds")
-            time.sleep(0.1)
+            randNum += 1
 
         print("Time for beat drop!")
         # Making sure the text is off screen before running vision
@@ -540,7 +542,10 @@ class SpotifyInteractor():
     
     def playlistURLToFileName(self, url):
         '''Converts from url to uri to name to sanitized filename '''
-        return self.sanitizeFilename(self.getNameofPlaylist(self.convertUrlToUri(url)))
+        try:
+            return self.sanitizeFilename(self.getNameofPlaylist(self.convertUrlToUri(url)))
+        except:
+            return False
 
     def searchForBestSong(self, name):
         '''Uses spotify's search to look for the 20 best songs'''
@@ -616,12 +621,10 @@ class SpotifyInteractor():
     def setNextSong(self, set):
         '''Sets the next song'''
         self.nextSongs.append(set)
-        self.nextSongs.ind
 
     def getNextSongs(self):
         '''Gets a list of the next songs'''
         return self.nextSongs[:]
-    
     
     def downloadSong(self, url):
         '''Downloads the song specified by query using spotdl and the command line, if the song already exists then return None'''      
