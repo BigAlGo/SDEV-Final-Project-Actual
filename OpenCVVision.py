@@ -221,6 +221,7 @@ class OpenCVVision():
                 threshold = cv2.inRange(imgRGB, (210, 203, 202), (255, 255, 255)) # Threshold out evrything exept white
                 edges = cv2.Canny(threshold, threshold1=50, threshold2=150) # Finds edges
                 boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
+                cv2.imshow('img1', edges)
 
                 currentBoxes = []
 
@@ -243,6 +244,8 @@ class OpenCVVision():
                     blurred = cv2.GaussianBlur(threshold, (5, 5), 0)  # Reduce noise
                     edges = cv2.Canny(blurred, threshold1=50, threshold2=150) # Finds edges
                     boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
+                    cv2.imshow('img2', edges)
+
 
                     for contour in boxes:
                         if cv2.contourArea(contour) > 100:  # Filter small contours
@@ -288,7 +291,7 @@ class OpenCVVision():
 
                 self.lastBoxes = currentBoxes 
 
-                cv2.imshow('img', img)
+                # cv2.imshow('img', img)
                 # cv2.imshow('threshgold', edges)
                 key = cv2.waitKey(30)
 

@@ -1,6 +1,7 @@
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 from tkinter import messagebox
+from tkinter import simpledialog
 from pygame import mixer
 import OpenCVVision as OpenCv
 import tkinter as tk
@@ -60,14 +61,9 @@ class SpotifyInteractor():
         self.resetRounds()
 
     def roundStart(self):
-        """Plays a song after a specified time"""
-        print("roundStart")
+        '''Plays a song after a specified time'''
         # I am in a thread so while loops don't affect the over all program
-
-        round_start_time = time.time()
-
-        print("song #" + str(self.songNumber))
-        print("round #" + str(self.roundNumber))
+        startTime = time.time()
 
         # Get the playlist file
         file_name = self.getPlaylistFileFromSettings()
@@ -76,137 +72,109 @@ class SpotifyInteractor():
             file_name = settingsFile.readlines()[3]
             settingsFile.close()
         
-        with open("Songs\\" + file_name, "r") as song_file:
-            if len(self.nextSongs) == 0:
-                songLines = song_file.readlines()
-                songLine = songLines[self.songNumber]
-            else:
-                songLine = self.nextSongs[0]
+        # Get the song info
+        songFile = open("Songs\\" + file_name, "r")
+        if len(self.nextSongs) == 0:
+            songLines = songFile.readlines()
+            songLine = songLines[self.songNumber]
+        else:
+            songLine = self.nextSongs[0]
 
-        # Extract song time from the song line
-        song_time = float(songLine.split(" ")[-1].strip())
+        # Extract song info from the song line
+        songTime = float(songLine.split(" ")[-1].strip())
+        songUrl = songLine.split(" ")[0]
 
         # Determine game type
         file = open("Config\\settings", "r")
-        game_type = file.readlines()[1].strip()
+        gameType = file.readlines()[1].strip()
         file.close()
 
-        # Adjust round timing based on game type
-        round_times = {
-            "Normal": (30, 13, 45, 30, 25),
-            "Swift" : (30, 5, 45, 30, 9),
+        # Adjust round timing based on game type format is:
+        # firstTime, halfRound, halfTime, normalTime, overRound
+        roundTimes = {
+            "Normal": (31, 13, 45, 30, 25),
+            "Swift" : (31, 5, 45, 30, 9),
             "Spike" : (11, 4, 20, 20, 7)
         }
-        first_round_time, half_time_round, half_time_time, normal_round_time, over_time_round = round_times.get(game_type, (30, 13, 45, 30, 25))
-
-        song_url = songLine.split(" ")[0]
+        firstRoundTime, halfTimeRound, halfTimeTime, normalRoundTime, overTimeRound = roundTimes.get(gameType, (30, 13, 45, 30, 25))
 
         # Determine when to play the song
-        play_after_time = round_start_time
-        play_into_time = 0
-
         if self.roundNumber == 1:
-            if song_time > first_round_time:
-                play_into_time = song_time - first_round_time
-            else:
-                play_after_time += first_round_time - song_time
-            print("First round, song starts in:", first_round_time - (time.time() - round_start_time))
-        elif self.roundNumber == half_time_round or self.roundNumber >= over_time_round:
-            if song_time > half_time_time:
-                play_into_time = song_time - half_time_time
-            else:
-                play_after_time += half_time_time - song_time
-            print("Half-time round, song starts in:", half_time_time - (time.time() - round_start_time))
+            thisRoundTime = firstRoundTime
+        elif self.roundNumber == halfTimeRound or self.roundNumber >= overTimeRound:
+            thisRoundTime = halfTimeTime
         else:
-            if song_time > normal_round_time:
-                play_into_time = song_time - normal_round_time
-            else:
-                play_after_time += normal_round_time - song_time
-            print("Normal round, song starts in:", normal_round_time - (time.time() - round_start_time))
+            thisRoundTime = normalRoundTime
 
-        if play_into_time == 0:
-            # Wait for play_after_time
-            print(play_after_time - time.time())
-            if play_after_time - time.time() <= 3:
-                # if less than 3 sec before play fade out quick
-                mixer.music.fadeout(int(((play_after_time - time.time()) / 3) * 1000))
-            else:
-                # else wait for the time then fade out slow
-                while time.time() > play_after_time - 3 and self.roundLoop:
-                    print(f"Waiting... {play_after_time - time.time():.2f} seconds left")
-                    time.sleep(0.05)
-                mixer.music.fadeout(2500)
-            # Wait until ready to play
-            randNum = 0
-            while time.time() < play_after_time and self.roundLoop:
-                print(f"Waiting... {play_after_time - time.time():.2f} seconds left")
-                randNum += 1 # to not kill the cpu
+        roundStartTime = startTime + thisRoundTime
 
-            # Start playback
-            self.paused = False
-            self.setVolumeHigh()
-            mixer.music.load("Songs\\LocalSongsOGG\\" + self.sanitizeFilename(song_url) + ".ogg")
-            self.setVolumeHigh()
+        # Figure out if we need to wait or play now
+        if thisRoundTime - songTime - 3 >= 0:
+            # Calculating when we need to do things
+            playAfterTime = roundStartTime - songTime
+            fadeOutStartTime = playAfterTime - 3
+            loadMusicTime = playAfterTime - songTime - 0.5
 
-            if song_time < 3:
-                mixer.music.play(loops = -1, fade_ms = int((song_time / 3) * 1000))
-            else:
-                mixer.music.play(loops = -1, fade_ms = 3000)
-        else:
-            # Start playback with offset
-            time_until_play = play_after_time - time.time()
-            fadeout_time = 2.25
+            while time.time() < fadeOutStartTime:
+                pass
+            
+            mixer.music.fadeout(2500)
+            print("fade out")
 
-            # Fade out current song and wait
-            if time_until_play > fadeout_time:
-                mixer.music.fadeout(int(fadeout_time * 1000))
-                time.sleep(fadeout_time)
-            else:
-                mixer.music.fadeout(int(max(0, time_until_play) * 1000))
-                time.sleep(max(0, time_until_play))
+            while time.time() < loadMusicTime:
+                pass
 
-            # Load and prepare the new song
-            song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(song_url) + ".ogg"
-            mixer.music.load(song_path)
+            # Load song
+            songPath = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(songUrl) + ".ogg"
+            mixer.music.load(songPath)
+            print("load")
 
-            # Set the position in the song
+            while time.time() < playAfterTime:
+                pass
+
+            # Play song
             mixer.music.play(loops = -1, fade_ms = 0)
-            mixer.music.set_pos(play_into_time)
+            print("play")
 
-            # Calculate fade-in time based on how much time until beat drop
-            time_until_beat = song_time - play_into_time
-            if time_until_beat < fadeout_time:
-                fade_in = max(0.1, time_until_beat / 3)
-            else:
-                fade_in = fadeout_time
+            while time.time() < roundStartTime:
+                pass
 
-            # Pause immediately and fade in manually by adjusting volume
-            mixer.music.set_volume(0)
-            start_time = time.time()
-            fade_end = start_time + fade_in
+            # Wait for the barrier drop
+            print("drop")
+        else:
+            # Calculating when we need to do things
+            mixer.music.fadeout(2500)
+            calcsTime = time.time()
+            playIntoTime = -(startTime + thisRoundTime - calcsTime - 3 - songTime)
+            loadMusicTime = calcsTime + 2.5
+            playTime = calcsTime + 3
+            print("calcs:", time.time() - roundStartTime)
+            
+            while time.time() < loadMusicTime:
+                pass
 
-            # Gradually increase volume
-            while time.time() < fade_end and self.roundLoop:
-                elapsed = time.time() - start_time
-                volume = min(self.getVolumeHigh(), elapsed / fade_in)
-                mixer.music.set_volume(volume)
-                time.sleep(0.05)
+            # Load song
+            songPath = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(songUrl) + ".ogg"
+            mixer.music.load(songPath)
+            print("load")
 
-            self.setVolumeHigh()
+            while time.time() < playTime:
+                pass
 
-        print("started playback")
+            # Play song
+            mixer.music.play(loops = -1, fade_ms = 500)
+            mixer.music.set_pos(playIntoTime)
+            print("play:", playIntoTime)
 
-        # Wait until beat drop
-        print_time = time.time() + song_time + 0.5
-        randNum = 0
-        while time.time() < print_time and self.roundLoop:
-            remaining_time = print_time - time.time()
-            print(f"Time until beat drop: {remaining_time:.2f} seconds")
-            randNum += 1
+            while time.time() < roundStartTime:
+                pass
+            
+            # Wait for the barrier drop
+            print("drop")
+        self.setVolumeHigh()
 
-        print("Time for beat drop!")
         # Making sure the text is off screen before running vision
-        time.sleep(0.5)
+        time.sleep(1)
 
         # Update song number
         if len(self.nextSongs) == 0:
@@ -218,9 +186,7 @@ class SpotifyInteractor():
         else:
             self.nextSongs.pop(0)
 
-        
         self.roundNumber += 1
-        
         
         if self.roundLoop:
             # I am still in a thread so while loops don't affect the overall program
@@ -502,7 +468,6 @@ class SpotifyInteractor():
         except:
             # Unable to connect to Spotify
             return False
-
     
     def getNameOfSong(self, url):
         '''Returns the name of a song given the url'''
@@ -549,15 +514,43 @@ class SpotifyInteractor():
 
     def searchForBestSong(self, name):
         '''Uses spotify's search to look for the 20 best songs'''
-        return self.spotifyClient.search(q = name, type = "track", limit = 20)
+        return self.spotifyClient.search(q = name, type = "track", limit = 30)
 
-    def deleteSongFile(self):
-        '''Deleats the SongNames File'''
-        #Deletes the current songNames file
-        fileName = self.getPlaylistFileFromSettings()
+    def remakeOneSong(self):
+        '''Deleats one song with the search algorithum'''
+        #Uses Spotify's search to look through the main file for the song requested, then adds that song to play next 
+        songsFile = open("Songs\\masterSongFile", "r")
+        masterLines = songsFile.readlines()
 
-        open("Songs\\" + fileName, "r").close()
-    
+        while True:
+            songQuery = simpledialog.askstring("Delete Song", "Please enter the song you would like to delete")
+            if songQuery == None:
+                break
+            found = False
+            # Searching for the song
+            for track in spotifyIntern.searchForBestSong(songQuery)["tracks"]["items"]:
+                for index, line in enumerate(masterLines):
+                    if track["external_urls"]["spotify"] in line:
+                        theLineindex = index
+                        theSong = track["name"]
+                        theUrl = track["external_urls"]["spotify"]
+                        found = True
+            if found:
+                areYouSure = messagebox.askyesno("Delete Song", "Are you sure you want to delete the song \"" + theSong + "\"?")
+                if areYouSure:
+                    break
+            else:
+                messagebox.showinfo("Search", "No saved song was found using the query: \"" + songQuery + "\". try narrowing it down by searching with the author as well.")
+
+        masterLines.pop(index)
+
+        fileAnswer = messagebox.askyesno("Delete Song", theSong + " has been removed. Would you also like to delete the mp3 file?")
+        if fileAnswer:
+            song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(theUrl) + ".ogg"
+            os.remove(song_path)
+            messagebox.showinfo("Delete Song", theSong + " has been removed.")
+
+
     def removeHotkeys(self):
         '''Removes any hotkeys'''
         keyboard.remove_all_hotkeys()

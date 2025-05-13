@@ -90,7 +90,7 @@ def createSettingsWindow():
     settingsFile.close()
 
     confirmButton = Button(settingsWindow, text = "Save", command = saveSettings, bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
-    reCreateButton = Button(settingsWindow, text = "Delete All Songs", command = remakeSongFile, bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
+    openRemakeWindow = Button(settingsWindow, text = "Open Remake Window", command = createRemakeWindow, bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
     openHotkeyWindow = Button(settingsWindow, text = "Open Hotkey Window", command = createHotKeyWindow, bg = "#72d8cc", activebackground = "#000000", activeforeground = "#4c9ba4")
 
     # Adds everything to the canvas
@@ -102,7 +102,7 @@ def createSettingsWindow():
     settingsCanvas.create_window(1120, 530, window = spikeRadio)
 
     settingsCanvas.create_window(640, 600, window = confirmButton)
-    settingsCanvas.create_window(160, 500, window = reCreateButton)
+    settingsCanvas.create_window(160, 500, window = openRemakeWindow)
 
     settingsCanvas.create_window(640, 335, window = playListLinkText)
     settingsCanvas.create_window(960, 285, window = openHotkeyWindow)
@@ -192,6 +192,53 @@ def createHotKeyWindow():
 
     hotkeyCanvas.create_window(270, 250, window = saveButton)
     # hotkeyCanvas.create_window(170, 120, window = recordButton) doesnt work, probebly remove
+
+
+def createRemakeWindow():
+    '''Creates the hotkey window'''
+    global remakeWindow
+    remakeWindow = tk.Toplevel()
+    remakeWindow.title("Remake")
+    remakeWindow.iconbitmap("Images\\ValoBeatsLogo.ico")
+
+    # Calculates the middle of the screen
+    width = mainWindow.winfo_screenwidth() / 2
+    height = mainWindow.winfo_screenheight() / 2
+
+    # Creates a string of the offset needed to get to the center of the screen
+    oWidth = str(int(width - 540/2))
+    oHeight = str(int(height - 303/2 - 65))
+
+    # Creates size of screen
+    remakeWindow.geometry("540x303+" + oWidth + "+" + oHeight)
+
+    remakeCanvas = Canvas(remakeWindow, width = 540, height = 303)
+    remakeCanvas.pack(fill = "both", expand = True)
+
+    # Gets photo from settings
+    global hotkeyImage
+    hotkeyImage = PhotoImage(file = "Images\\HotKeysImage.gif")
+
+    # Adds the image to the canvas
+    remakeCanvas.create_image(0, 0, image = hotkeyImage, anchor = "nw")
+
+    global remakeOneButton
+    global remakeAllButton
+    global remakePlaylistButton
+
+    # Creates the buttons for remaking    
+    remakeOneButton =      Button(remakeWindow, text = "Remake One", command = spotifyIntern.remakeOneSong, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
+    remakeAllButton =      Button(remakeWindow, text = "Remake All", command = remakeSongFile, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
+    remakePlaylistButton = Button(remakeWindow, text = "Remake Playlist", bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
+
+    closeButton = Button(remakeWindow, text = "Close", command = remakeWindow.destroy, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
+    
+    # Adding the elements
+    remakeCanvas.create_window(50, 70, window = remakeOneButton)
+    remakeCanvas.create_window(170, 70, window = remakeAllButton)
+    remakeCanvas.create_window(290, 70, window = remakePlaylistButton)
+
+    remakeCanvas.create_window(270, 250, window = closeButton)
 
 def settingsDestroyed(e = None):
     '''When the settings window is manually closed and they didn't click save, 
@@ -353,7 +400,7 @@ def addSongNext():
     for line in masterLines:
         masterSongs.append(line[:line.find(" ")])
     found = False
-    # Searching for the 
+    # Searching for the song
     for track in spotifyIntern.searchForBestSong(nextSongText.get())["tracks"]["items"]:
         for masterSong in masterSongs:
             if track["external_urls"]["spotify"] == masterSong:
@@ -378,7 +425,7 @@ def addSongNext():
 
         messagebox.showinfo("Search", message)
     else:
-        messagebox.showinfo("Search", "No saved song was found using the query: \"" + nextSongText.get() + "\". try narrowing it down by searching with the author as well")
+        messagebox.showinfo("Search", "No saved song was found using the query: \"" + nextSongText.get() + "\". try narrowing it down by searching with the author as well.")
 
 def remakeSongFile():
     answer = messagebox.askquestion("Confirmation", "Are you sure you want to DELETE ALL saved songs and redo the Song Timing for all the songs in the current playlist?")
