@@ -528,7 +528,7 @@ class SpotifyInteractor():
                 break
             found = False
             # Searching for the song
-            for track in spotifyIntern.searchForBestSong(songQuery)["tracks"]["items"]:
+            for track in self.searchForBestSong(songQuery)["tracks"]["items"]:
                 for index, line in enumerate(masterLines):
                     if track["external_urls"]["spotify"] in line:
                         theLineindex = index
@@ -542,7 +542,12 @@ class SpotifyInteractor():
             else:
                 messagebox.showinfo("Search", "No saved song was found using the query: \"" + songQuery + "\". try narrowing it down by searching with the author as well.")
 
-        masterLines.pop(index)
+        masterLines.pop(theLineindex)
+        
+        songsFile = open("Songs\\masterSongFile", "w")
+        songsFile.writelines(masterLines)
+        songsFile.close()
+
 
         fileAnswer = messagebox.askyesno("Delete Song", theSong + " has been removed. Would you also like to delete the mp3 file?")
         if fileAnswer:
@@ -661,8 +666,6 @@ class SpotifyInteractor():
                     latest_file = file
 
             # Return the path of the most recently modified file, the one we just downloaded
-            print(outputPath)
-            print(latest_file)
             downloadedFilePath = os.path.join(outputPath, latest_file)
 
             os.rename(downloadedFilePath, newFilePath)
