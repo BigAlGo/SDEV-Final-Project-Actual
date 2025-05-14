@@ -380,12 +380,17 @@ class SpotifyInteractor():
         masterFile.close()
         return uniqueSongs
     
+    
+    # create list of each url in the spotify playlist
+    # remove each url found in the directory
+    # len(list) is number we need to download
     def downloadNewSongs(self, songUrls):
-        '''Takes in a lise of songUrls and downloads them'''
+        '''Takes in a list of songUrls and downloads them'''
 
         if len(songUrls) == 0:
             return
-        # Getting the number of songs in master vs in local
+        
+        # Getting the number of songs
         numberOfSongs = len(songUrls)
 
         # Assumes 30 sec per song to download
@@ -551,8 +556,11 @@ class SpotifyInteractor():
 
         fileAnswer = messagebox.askyesno("Delete Song", theSong + " has been removed. Would you also like to delete the mp3 file?")
         if fileAnswer:
-            song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(theUrl) + ".ogg"
-            os.remove(song_path)
+            try:
+                song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(theUrl) + ".ogg"
+                os.remove(song_path)
+            except:
+                pass
             messagebox.showinfo("Delete Song", theSong + " has been removed.")
 
 

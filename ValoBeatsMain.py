@@ -6,17 +6,15 @@ from tkinter import simpledialog
 import SpotifyInteractor as SI
 
 import keyboard
+import threading
+import time
+import os
 
-# add remake window
-# remake singular song using search
 # remake all songs in a playlist
 # remake all master songs
 # add a loading bar to downloading songs
 
-# sonmgs end like .3 late 
 # pause doeent work
-# it never gradually plays the song
-# it sometimes fades out too early
 def createSettingsWindow():
     '''Creates the settings window'''
     # Hides main window
@@ -246,7 +244,89 @@ def settingsDestroyed(e = None):
     mainWindow.deiconify()
     spotifyIntern.makeHotKeys()
 
+# Loading Bar window
+def createLoadingBarWindow():
+    '''Creates the loading bar window'''
+    global loadingBarWindow
+    loadingBarWindow = tk.Toplevel()
+    loadingBarWindow.title("Loading Bar")
+    loadingBarWindow.iconbitmap("Images\\ValoBeatsLogo.ico")
 
+    # Calculates the middle of the screen
+    width = mainWindow.winfo_screenwidth() / 2
+    height = mainWindow.winfo_screenheight() / 2
+
+    # Creates a string of the offset needed to get to the center of the screen
+    oWidth = str(int(width - 540/2))
+    oHeight = str(int(height - 303/2 - 65))
+
+    # Creates size of screen
+    loadingBarWindow.geometry("540x303+" + oWidth + "+" + oHeight)
+
+    # Creates a canvas
+    global loadingBarCanvas
+    loadingBarCanvas = Canvas(loadingBarWindow, width = 540, height = 303)
+    loadingBarCanvas.pack(fill = "both", expand = True)
+
+    loadingBarCanvas.create_rectangle(90, 90, 460, 210, outline = "black", fill = "white", tag = "outline")
+    loadingBarCanvas.create_rectangle(100, 100, 450, 200, outline = "red", fill = "red", tag="box")
+    loadingBarCanvas.create_text(270, 150, text = "Song Download Progress", font = ("Lucida Sans", 30), fill = "#000000", tag = "text")
+
+    threading.Thread(target = loadingThread, daemon=True).start()
+
+def loadingThread():
+    '''Updates the loading bar'''
+    startTime = time.time()
+    while True:
+        songsToDownload = getSongsToDownload(startTime)
+        # if len(songsToDownload) == 0:
+            # break
+        print(songsToDownload)
+
+        # Updates the loading bar based on the number of songs to download vs original number of songs
+        loadingBarCanvas.coords("box", 100, 100, 450 - (len(songsToDownload) * 35), 200)
+        loadingBarCanvas.update()
+        time.sleep(0.1)
+
+    loadingBarWindow.destroy()
+
+def getSongsToDownload(startTime):
+    '''Gets the songs to download from the online playlist vs local'''
+    settingsFile = open("Config\\settings", "r")
+    playlistURL = settingsFile.readlines()[2]
+    settingsFile.close()
+    
+    # Gets the songs in the playlist
+    try:
+        tracks = spotifyIntern.spotifyClient.playlist_tracks(playlistURL)['items']
+
+        # Extract track URLs
+        spotifySongs = []
+        for track in tracks:
+            if track["track"]:
+                spotifySongs.append(track["track"]["external_urls"]["spotify"])
+
+        # Gets the folder of the songs
+        cwd = os.getcwd()
+        outputPath = cwd + "\\Songs\\LocalSongsOGG"
+
+        # Makes a list of the songs in the local folder
+        localSongs = []
+        for file in os.listdir(outputPath):
+            if file.endswith(".ogg"):
+                localSongs.append(file[:-4])
+
+        # Checks if the songs in spotifySongs are in localSongs
+        # If they are not, add them to the list of songs to download
+        songsToDownload = []
+        for song in spotifySongs:
+            songFileName = spotifyIntern.sanitizeFilename(song) + ".ogg"
+            if song not in localSongs:
+                songsToDownload.append(song)
+    except:
+        songsToDownload = [1] * int(10 - (time.time() - startTime))
+
+    return songsToDownload
 def saveSettings():
     '''Saves the settings to the file'''
     # Gets the previous file name incase we can't connect to internet
@@ -302,7 +382,7 @@ def saveSettings():
     else:
         masterSongFile = open("Songs\\masterSongFile", "a")
 
-        # Createing new playlist Song File
+        # Createing new playlist Song File or adding to previous
         fileName = spotifyIntern.playlistURLToFileName(playListLinkText.get())
         playlistSongFile = open("Songs\\" + fileName, "a")
         
@@ -510,6 +590,7 @@ def main():
     mainCanvas.create_window(320, 270, window = closeButton)
 
     # Wait for input
+    createLoadingBarWindow()
     mainWindow.mainloop()
 
 if __name__ == "__main__":
