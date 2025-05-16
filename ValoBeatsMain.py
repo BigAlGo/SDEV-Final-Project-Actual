@@ -51,28 +51,32 @@ def createSettingsWindow():
     # Adds the image to the canvas
     settingsCanvas.create_image(0, 0, image = settingImage, anchor = "nw")
 
+    # Colors
+    darkRed =  "#5c1314"
+    lightRed = "#831f1f"
+    onColor = "#f52740"
+    offColor = "#04121e"
+    
     # Adds text to the window
-    settingsCanvas.create_text(320, 225, text = "Volume", font = ("Lucida Sans", 30), fill = "#d85965")
-    settingsCanvas.create_text(960, 225, text = "HotKeys", font = ("Lucida Sans", 30), fill = "#72d8cc")
-    settingsCanvas.create_text(640, 270, text = "PlayList URL", font = ("Lucida Sans", 30), fill = "#c73d4c")
+    settingsCanvas.create_text(640, 300, text = "Volume", font = ("Lucida Sans", 30), fill = offColor)
+    settingsCanvas.create_text(640, 200, text = "PlayList URL", font = ("Lucida Sans", 30), fill = offColor)
 
     # Opens the settings file
     settingsFile = open("Config\\settings", "r")
     fileLines = settingsFile.readlines()
 
     # Creating the Radio Buttons
-    normalRadio = tk.Radiobutton(settingsCanvas, text = "Unrated/Competitive", variable = radioGameType, value = "Normal", bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
-    swiftRadio = tk.Radiobutton(settingsCanvas, text = "Swift Play", variable = radioGameType, value = "Swift", bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
-    spikeRadio = tk.Radiobutton(settingsCanvas, text = "Spike Rush", variable = radioGameType, value = "Spike", bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
+    normalRadio = tk.Radiobutton(settingsCanvas, text = "Unrated/Competitive", variable = radioGameType, value = "Normal", selectcolor = lightRed, fg = offColor,  bg = lightRed, activebackground = "#000000", activeforeground = lightRed)
+    swiftRadio  = tk.Radiobutton(settingsCanvas, text = "Swift Play", variable = radioGameType, value = "Swift", selectcolor = lightRed, fg = offColor, bg = lightRed, activebackground = "#000000", activeforeground = lightRed)
+    spikeRadio  = tk.Radiobutton(settingsCanvas, text = "Spike Rush", variable = radioGameType, value = "Spike", selectcolor = lightRed, fg = offColor, bg = lightRed, activebackground = "#000000", activeforeground = lightRed)
 
     radioGameType.set(fileLines[1][:-1])
 
     # Creates a scale, a button, and text entry to put on the canvas
     global loudVolumeScale
     global quietVolumeScale
-    loudVolumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d85965", troughcolor = "#4f374d", activebackground = "#d85965", highlightbackground = "#d1656c", highlightcolor= "#000000")
-    quietVolumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, bg = "#d85965", troughcolor = "#4f374d", activebackground = "#d85965", highlightbackground = "#d1656c", highlightcolor= "#000000")
-
+    loudVolumeScale  = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, fg = offColor, bg = lightRed, troughcolor = darkRed, activebackground = lightRed, highlightbackground = lightRed, highlightcolor = offColor)
+    quietVolumeScale = Scale(settingsWindow, from_ = 0, to_ = 100, orient = tk.HORIZONTAL, resolution = 1, fg = offColor, bg = lightRed, troughcolor = darkRed, activebackground = lightRed, highlightbackground = lightRed, highlightcolor = offColor)
 
     # Sets the orginal volume to be the last volume
     loudVolumeScale.set(int(fileLines[0][0:3]))
@@ -80,30 +84,31 @@ def createSettingsWindow():
 
     # Creates the entry fields for the playlist
     global playListLinkText
-    playListLinkText = Entry(settingsWindow, width = 30, justify = "center", bg = "#eb4454", fg = "#e8fbfb")
+    playListLinkText = Entry(settingsWindow, width = 50, justify = "center", bg = lightRed, fg = offColor)
     
     # Adds previous playlist to the field
     playListLinkText.insert(0, fileLines[2])
 
     settingsFile.close()
 
-    confirmButton = Button(settingsWindow, text = "Save", command = saveSettings, bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
-    openRemakeWindow = Button(settingsWindow, text = "Open Remake Window", command = createRemakeWindow, bg = "#4c9ba4", activebackground = "#000000", activeforeground = "#4c9ba4")
-    openHotkeyWindow = Button(settingsWindow, text = "Open Hotkey Window", command = createHotKeyWindow, bg = "#72d8cc", activebackground = "#000000", activeforeground = "#4c9ba4")
+    confirmButton    = Button(settingsWindow, text = "Save", command = saveSettings, fg = offColor, bg = lightRed, activebackground = "#000000", activeforeground = lightRed)
+    openRemakeWindow = Button(settingsWindow, text = "Open Remake Window", command = createRemakeWindow, fg = offColor, bg = lightRed, activebackground = "#000000", activeforeground = lightRed)
+    openHotkeyWindow = Button(settingsWindow, text = "Open Hotkey Window", command = createHotKeyWindow, fg = offColor, bg = lightRed, activebackground = "#000000", activeforeground = lightRed)
 
     # Adds everything to the canvas
-    settingsCanvas.create_window(320, 300, window = loudVolumeScale)
-    settingsCanvas.create_window(320, 350, window = quietVolumeScale)
+    settingsCanvas.create_window(640, 250, window = playListLinkText)
 
-    settingsCanvas.create_window(1120, 470, window = normalRadio)
-    settingsCanvas.create_window(1120, 500, window = swiftRadio)
-    settingsCanvas.create_window(1120, 530, window = spikeRadio)
+    settingsCanvas.create_window(580, 350, window = loudVolumeScale)
+    settingsCanvas.create_window(700, 350, window = quietVolumeScale)
+
+    settingsCanvas.create_window(640, 400, window = normalRadio)
+    settingsCanvas.create_window(600, 430, window = swiftRadio)
+    settingsCanvas.create_window(680, 430, window = spikeRadio)
+
+    settingsCanvas.create_window(572, 500, window = openRemakeWindow)
+    settingsCanvas.create_window(708, 500, window = openHotkeyWindow)
 
     settingsCanvas.create_window(640, 600, window = confirmButton)
-    settingsCanvas.create_window(160, 500, window = openRemakeWindow)
-
-    settingsCanvas.create_window(640, 335, window = playListLinkText)
-    settingsCanvas.create_window(960, 285, window = openHotkeyWindow)
 
     settingsWindow.bind("<Destroy>", settingsDestroyed) 
 
@@ -130,7 +135,7 @@ def createHotKeyWindow():
 
     # Gets photo from settings
     global hotkeyImage
-    hotkeyImage = PhotoImage(file = "Images\\HotKeysImage.gif")
+    hotkeyImage = PhotoImage(file = "Images\\HotkeyWindowBG.gif")
 
     # Adds the image to the canvas
     hotkeyCanvas.create_image(0, 0, image = hotkeyImage, anchor = "nw")
@@ -215,7 +220,7 @@ def createRemakeWindow():
 
     # Gets photo from settings
     global hotkeyImage
-    hotkeyImage = PhotoImage(file = "Images\\HotKeysImage.gif")
+    hotkeyImage = PhotoImage(file = "Images\RemakeWindowBG.gif")
 
     # Adds the image to the canvas
     remakeCanvas.create_image(0, 0, image = hotkeyImage, anchor = "nw")
@@ -269,7 +274,7 @@ def createLoadingBarWindow():
     loadingBarCanvas.pack(fill = "both", expand = True)
 
     loadingBarCanvas.create_rectangle(90, 90, 460, 210, outline = "black", fill = "white", tag = "outline")
-    loadingBarCanvas.create_rectangle(100, 100, 450, 200, outline = "red", fill = "red", tag="box")
+    loadingBarCanvas.create_rectangle(100, 100, 110, 200, outline = "red", fill = "red", tag="box")
     loadingBarCanvas.create_text(270, 150, text = "Song Download Progress", font = ("Lucida Sans", 30), fill = "#000000", tag = "text")
 
     threading.Thread(target = loadingThread, daemon=True).start()
@@ -277,16 +282,25 @@ def createLoadingBarWindow():
 def loadingThread():
     '''Updates the loading bar'''
     startTime = time.time()
+
+    sections = len(getSongsToDownload(startTime))
+    print(sections)
+
     while True:
-        songsToDownload = getSongsToDownload(startTime)
-        # if len(songsToDownload) == 0:
-            # break
-        print(songsToDownload)
+        numSongsToDownload = len(getSongsToDownload(startTime))
+
+        if numSongsToDownload == 0:
+            break
+        print(numSongsToDownload)
 
         # Updates the loading bar based on the number of songs to download vs original number of songs
-        loadingBarCanvas.coords("box", 100, 100, 450 - (len(songsToDownload) * 35), 200)
-        loadingBarCanvas.update()
-        time.sleep(0.1)
+        try:
+            loadingBarCanvas.coords("box", 100, 100, 100 + 350 - int(350 / sections * numSongsToDownload), 200)
+            loadingBarCanvas.update()
+        except:
+            # If the window is closed, break out of the loop
+            break
+        time.sleep(1)
 
     loadingBarWindow.destroy()
 
@@ -321,12 +335,14 @@ def getSongsToDownload(startTime):
         songsToDownload = []
         for song in spotifySongs:
             songFileName = spotifyIntern.sanitizeFilename(song) + ".ogg"
-            if song not in localSongs:
+            if songFileName not in localSongs:
                 songsToDownload.append(song)
     except:
+        # if we cant connect to the internet, (which shouldnt happen) we just pretend with time 10
         songsToDownload = [1] * int(10 - (time.time() - startTime))
 
     return songsToDownload
+
 def saveSettings():
     '''Saves the settings to the file'''
     # Gets the previous file name incase we can't connect to internet
@@ -389,6 +405,8 @@ def saveSettings():
         # Asks how you want to input the songs
         uniqueSongs = spotifyIntern.updatePlaylistFile(fileName)
         spotifyIntern.downloadNewSongs(uniqueSongs)
+        # Creates the loading bar window
+        createLoadingBarWindow()
 
         if len(uniqueSongs) != 0:
             realAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to use local playing to set the timing for all the songs? (Most accurate)")
@@ -541,17 +559,17 @@ def main():
 
     # Creates a string of the offset needed to get to the center of the screen
     oWidth = str(int(width - 640/2))
-    oHeight = str(int(height - 360/2 - 30))
+    oHeight = str(int(height - 427/2 - 30))
 
     # Creates screen and size
     mainWindow.title("Main Screen")
-    mainWindow.geometry("640x360" + "+" + oWidth + "+" + oHeight)
+    mainWindow.geometry("640x427" + "+" + oWidth + "+" + oHeight)
 
     # Gets photo for main
-    mainImage = PhotoImage(file = "Images\\ValorantMainBG.gif")
+    mainImage = PhotoImage(file = "Images\\ValoBeatsMainBG.gif")
 
     # Creates a canvas for the photo and text to be put on
-    mainCanvas = Canvas(mainWindow, width = 640, height = 360)
+    mainCanvas = Canvas(mainWindow, width = 640, height = 427)
     mainCanvas.pack(fill = "both", expand = True)
 
     # Adds the image to the canvas
@@ -562,11 +580,11 @@ def main():
 
     # Creates buttons
 
-    backGround = "#0f1922"
-    foreGround = "#fe4357"
+    backGround = "#04121e"
+    foreGround = "#f52740"
 
-    activebackground = "#fe4357"
-    activeforeground = "#0f1922"
+    activebackground = "#f52740"
+    activeforeground = "#04121e"
     boarderWidth = 0,
 
     shuffleButton   = Button(mainWindow, text = "Shuffle songs", width = 12, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = spotifyIntern.shuffleSongs)
@@ -579,18 +597,17 @@ def main():
 
     closeButton = Button(mainWindow, text = "Close", bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = endProgram)
     # Adds each element to the canvas
-    mainCanvas.create_window(80, 50, window = shuffleButton)
-    mainCanvas.create_window(80, 75, window = resetRoundsButton)
+    mainCanvas.create_window(80, 80, window = shuffleButton)
+    mainCanvas.create_window(80, 105, window = resetRoundsButton)
 
-    mainCanvas.create_window(500, 105, window = searchButton)
-    mainCanvas.create_window(500, 126, window = nextSongText)
+    mainCanvas.create_window(500, 125, window = searchButton)
+    mainCanvas.create_window(500, 146, window = nextSongText)
 
-    mainCanvas.create_window(450, 300, window = settingsButton)
+    mainCanvas.create_window(485, 320, window = settingsButton)
 
-    mainCanvas.create_window(320, 270, window = closeButton)
+    mainCanvas.create_window(310, 300, window = closeButton)
 
     # Wait for input
-    createLoadingBarWindow()
     mainWindow.mainloop()
 
 if __name__ == "__main__":
