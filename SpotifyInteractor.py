@@ -1,3 +1,4 @@
+import spotdl.download
 from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.oauth2 import SpotifyOAuth
 from tkinter import messagebox
@@ -14,13 +15,14 @@ import spotipy
 import re
 import threading
 import sys
-import spotdl
+from spotdl import Spotdl
+from spotdl.types.options import DownloaderOptions
 
 class SpotifyInteractor():
     def __init__(self, screenWidth, screenHeight):
+        '''Creates a SpotifyInteractor object by creating a spotdl object and a spotpy object'''
         self.vision = OpenCv.OpenCVVision(screenWidth, screenHeight, self.roundStart)
 
-        # todo I dont want to print anything out while calling mixer.init()
         mixer.init()
 
         self.makeHotKeys()
@@ -28,26 +30,43 @@ class SpotifyInteractor():
         self.roundNumber = 1
 
         #Initing spotify
+        clientId = "35661866380c4cdcb93e51cc756ee958"
+        clientSecret = "fd334360adb04a7980412c946f1e00af"
         # able to get and modify the playback state and able to read public playlists 
         SCOPE = "user-modify-playback-state user-read-playback-state"
-
         authManagerClient = SpotifyOAuth(
-            client_id="35661866380c4cdcb93e51cc756ee958",
-            client_secret="fd334360adb04a7980412c946f1e00af",
+            client_id = clientId,
+            client_secret = clientSecret,
             redirect_uri="http://localhost:5000/callback",
             scope=SCOPE,
             show_dialog=True
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
+        
+        outputDir = "Songs\\LocalSongsOGG"
+        # SpotDL options
+        downloader_settings = {
+            "output_format": "ogg",
+            "output": outputDir,
+            "threads": 1
+        }
+        # Initialize SpotDL instance
+        self.spotdl = Spotdl(
+            client_id = clientId,
+            client_secret = clientSecret,
+            downloader_settings = downloader_settings,
+        )
         self.nextSongs = []
         self.roundLoop = False
         self.savedKey = None
         self.paused = False
 
     def roundStartHotKeyPressed(self):
+        '''Pass through function'''
         self.startRoundLoop()
 
     def startRoundLoop(self):
+        '''Starts the thread if it is not already open'''
         if not self.roundLoop:
             self.roundLoop = True
             self.vision.startLoop()
@@ -56,6 +75,7 @@ class SpotifyInteractor():
 
 
     def stopRoundLoop(self):
+        '''Stops the thread'''
         self.roundLoop = False
         self.vision.stopLoop()
         self.resetRounds()
@@ -105,6 +125,8 @@ class SpotifyInteractor():
             thisRoundTime = halfTimeTime
         else:
             thisRoundTime = normalRoundTime
+        
+        # thisRoundTime -= 0.5
 
         roundStartTime = startTime + thisRoundTime
 
@@ -116,31 +138,27 @@ class SpotifyInteractor():
             loadMusicTime = playAfterTime - songTime - 0.5
 
             while time.time() < fadeOutStartTime:
-                pass
+                time.sleep(0.05)
             
             mixer.music.fadeout(2500)
-            print("fade out")
 
             while time.time() < loadMusicTime:
-                pass
+                time.sleep(0.05)
 
             # Load song
             songPath = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(songUrl) + ".ogg"
             mixer.music.load(songPath)
-            print("load")
 
             while time.time() < playAfterTime:
-                pass
+                time.sleep(0.05)
 
             # Play song
             mixer.music.play(loops = -1, fade_ms = 0)
-            print("play")
 
             while time.time() < roundStartTime:
-                pass
+                time.sleep(0.05)
 
             # Wait for the barrier drop
-            print("drop")
         else:
             # Calculating when we need to do things
             mixer.music.fadeout(2500)
@@ -148,29 +166,25 @@ class SpotifyInteractor():
             playIntoTime = -(startTime + thisRoundTime - calcsTime - 3 - songTime)
             loadMusicTime = calcsTime + 2.5
             playTime = calcsTime + 3
-            print("calcs:", time.time() - roundStartTime)
             
             while time.time() < loadMusicTime:
-                pass
+                time.sleep(0.05)
 
             # Load song
             songPath = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(songUrl) + ".ogg"
             mixer.music.load(songPath)
-            print("load")
 
             while time.time() < playTime:
-                pass
+                time.sleep(0.05)
 
             # Play song
             mixer.music.play(loops = -1, fade_ms = 500)
             mixer.music.set_pos(playIntoTime)
-            print("play:", playIntoTime)
 
             while time.time() < roundStartTime:
-                pass
+                time.sleep(0.05)
             
             # Wait for the barrier drop
-            print("drop")
         self.setVolumeHigh()
 
         # Making sure the text is off screen before running vision
@@ -180,7 +194,7 @@ class SpotifyInteractor():
         if len(self.nextSongs) == 0:
             # Loops through the song file
             if self.songNumber > len(songLines) + 1:
-                songNumber = 1
+                self.songNumber = 1
             else:
                 self.songNumber += 1
         else:
@@ -211,15 +225,11 @@ class SpotifyInteractor():
             keyboard.add_hotkey(endKey, callback = self.stopRoundLoop)
             keyboard.add_hotkey(lowKey, callback = self.setVolumeLow)
             keyboard.add_hotkey(highKey, callback = self.setVolumeHigh)
-            keyboard.add_hotkey(pauseKey, callback = self.pauseToggle, trigger_on_release = True)
+            keyboard.add_hotkey(pauseKey, callback = self.pausePlay, trigger_on_release = True)
 
             return True
         except ValueError:
             return False
-        
-    def hotKeyRecord(self):
-        # messagebox.showinfo("Hotkey Record", "Please press ok, then any hot key combo you would like, then click on one of the fields.")
-        self.hotKeyRecord = keyboard.read_hotkey()
 
     def hotKeyEntryClicked(self, event):
         '''Replaces the entry with the hotkey'''
@@ -380,10 +390,6 @@ class SpotifyInteractor():
         masterFile.close()
         return uniqueSongs
     
-    
-    # create list of each url in the spotify playlist
-    # remove each url found in the directory
-    # len(list) is number we need to download
     def downloadNewSongs(self, songUrls):
         '''Takes in a list of songUrls and downloads them'''
 
@@ -393,17 +399,23 @@ class SpotifyInteractor():
         # Getting the number of songs
         numberOfSongs = len(songUrls)
 
-        # Assumes 30 sec per song to download
-        timeSec = 30 * numberOfSongs
+        # Assumes 15 sec per song to download
+        timeSec = 15 * numberOfSongs
         
         timeMinute = int(timeSec / 60.0)
         timeSec = timeSec % 60
 
         if (numberOfSongs >= 1):
-            messagebox.showinfo("Downloading Songs", f"The program will download {numberOfSongs} songs from spotify, estimated time: {timeMinute} minute(s) and {timeSec} seconds. It may be longer depending on your internet. If the program says it is not responding during this time, it is probebly still downloading")
-
+            messagebox.showinfo("Downloading Songs", "The program will download " + str(numberOfSongs) + " songs from spotify, estimated time: " + str(timeMinute) + " minute(s) and " + str(timeSec) + " seconds. It may be longer depending on your internet.\nIf the program says it is not responding during this time, it is still downloading.\nDO NOT CLOSE THE PROGRAM DURING THIS TIME!")
+        failedURLs = []
         for url in songUrls:
-            self.downloadSong(url)
+            try:
+                if not self.downloadSong(url):
+                    failedURLs.append(url)
+            except:
+                messagebox.showerror("Error Downloading", "Error Downloading " + url + ", song might have got deleted off of spotify")
+                failedURLs.append(url)
+        return failedURLs
 
     def downloadSavedSongs(self):
         '''Downloades the songs saved in masterSongFile'''
@@ -454,7 +466,7 @@ class SpotifyInteractor():
         songNames.close()
 
     def convertUrlToUri(self, spotifyUrl):
-        """Converts from a Spotify URL to a Spotify URI"""
+        '''Converts from a Spotify URL to a Spotify URI'''
         if "track/" in spotifyUrl:
             # For Tracks
             trackId = spotifyUrl.split("track/")[1].split("?")[0]
@@ -484,6 +496,7 @@ class SpotifyInteractor():
         return self.spotifyClient.playlist(id)['name']
     
     def getPlaylistFileFromSettings(self):
+        '''Gets the name of the playlist file name from settings'''
         settingsFile = open("Config\\settings", "r")
         fileName = self.playlistURLToFileName(settingsFile.readlines()[2])
         settingsFile.close()
@@ -574,18 +587,11 @@ class SpotifyInteractor():
         self.roundNumber = 1
 
     def playSong(self, url, fade = 0):
+        '''Plays a song using pygame mixer given the url and how long you want the fade to be'''
         song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(url) + ".ogg"
         mixer.music.load(song_path)
 
         mixer.music.play(loops = -1, fade_ms = fade)
-
-    def pauseToggle(self):
-        if not mixer.music.get_busy():
-            mixer.music.unpause()
-        else:
-            mixer.music.pause()
-
-        self.paused = not self.paused
     
     # todo maybe make it fade?
     def setVolumeHigh(self):
@@ -619,10 +625,12 @@ class SpotifyInteractor():
         return float(fileLines[0][3:6]) // 100
 
     def pausePlay(self):
+        '''Pauses music if it is playing and plays music if it is paused'''
+        print(mixer.music.get_busy())
         if mixer.music.get_busy():
             mixer.music.pause()
         else:
-            mixer.music.play()
+            mixer.music.unpause()
 
     def setNextSong(self, set):
         '''Sets the next song'''
@@ -651,16 +659,19 @@ class SpotifyInteractor():
             try:
                 subprocess.run([spotdlPath, url, "--format", "ogg", "--output", outputPath], check=True)
             except FileNotFoundError:
-                subprocess.run([spotdlPath.replace("Roaming", "Local\\Programs"), url, "--format", "ogg", "--output", outputPath], check=True)
+                try:
+                    subprocess.run([spotdlPath.replace("Roaming", "Local\\Programs"), url, "--format", "ogg", "--output", outputPath], check=True)
+                except Exception as e:
+                    messagebox.showerror("Your spotdl is installed in the wrong place. Make sure it is installed under \\AppData\\Roaming\\Python\\Python313\\Scripts\\spotdl.exe\nOr under \\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\spotdl.exe")
+                    return False
 
-
-            # Renaming the file
+            # Finding and renaming the file
             newFilePath = os.path.join(outputPath, fileName) 
 
             # List all files in the directory
             ogg_files = os.listdir(outputPath)
 
-            # find the most recently modified file
+            # Find the most recently modified file
             latest_file = None
             latest_mtime = 0
 
@@ -676,11 +687,16 @@ class SpotifyInteractor():
             # Return the path of the most recently modified file, the one we just downloaded
             downloadedFilePath = os.path.join(outputPath, latest_file)
 
+            # If the most recent downloaded song is already named then it is not the new unrenamed song
+            if "https___open.spotify.com_track_" in downloadedFilePath:
+                messagebox.showerror("Error Downloading", "Error Downloading " + url + ", SpotDL can't find this song code 1")
+                return False
+
             os.rename(downloadedFilePath, newFilePath)
 
             return True
         except subprocess.CalledProcessError as e:
-            messagebox.showerror("Error Downloading", "Error Downloading " + url + ", Song most likely got deleted off of spotify")
+            messagebox.showerror("Error Downloading", "Error Downloading " + url + ", SpotDL can't find this song")
             return False
         
 if __name__ == "__main__":
@@ -714,5 +730,5 @@ if __name__ == "__main__":
 
     print("unlo time: ", time.time() - startTime)'
     '''
-    spotifyIntern = SpotifyInteractor(1920, 1080)
-    spotifyIntern.downloadSavedSongs()
+    # spotifyIntern = SpotifyInteractor(1920, 1080)
+    # spotifyIntern.downloadSavedSongs()

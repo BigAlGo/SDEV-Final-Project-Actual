@@ -55,7 +55,7 @@ def createSettingsWindow():
     darkRed =  "#5c1314"
     lightRed = "#831f1f"
     onColor = "#f52740"
-    offColor = "#04121e"
+    offColor = "#000000"
     
     # Adds text to the window
     settingsCanvas.create_text(640, 300, text = "Volume", font = ("Lucida Sans", 30), fill = offColor)
@@ -84,10 +84,10 @@ def createSettingsWindow():
 
     # Creates the entry fields for the playlist
     global playListLinkText
-    playListLinkText = Entry(settingsWindow, width = 50, justify = "center", bg = lightRed, fg = offColor)
+    playListLinkText = Entry(settingsWindow, width = 90, justify = "center", bg = lightRed, fg = offColor)
     
     # Adds previous playlist to the field
-    playListLinkText.insert(0, fileLines[2])
+    playListLinkText.insert(0, fileLines[2][:-1])
 
     settingsFile.close()
 
@@ -210,17 +210,17 @@ def createRemakeWindow():
 
     # Creates a string of the offset needed to get to the center of the screen
     oWidth = str(int(width - 540/2))
-    oHeight = str(int(height - 303/2 - 65))
+    oHeight = str(int(height - 360/2 - 65))
 
     # Creates size of screen
-    remakeWindow.geometry("540x303+" + oWidth + "+" + oHeight)
+    remakeWindow.geometry("540x360+" + oWidth + "+" + oHeight)
 
-    remakeCanvas = Canvas(remakeWindow, width = 540, height = 303)
+    remakeCanvas = Canvas(remakeWindow, width = 540, height = 360)
     remakeCanvas.pack(fill = "both", expand = True)
 
     # Gets photo from settings
     global hotkeyImage
-    hotkeyImage = PhotoImage(file = "Images\RemakeWindowBG.gif")
+    hotkeyImage = PhotoImage(file = "Images\\RemakeWindowBG.gif")
 
     # Adds the image to the canvas
     remakeCanvas.create_image(0, 0, image = hotkeyImage, anchor = "nw")
@@ -248,100 +248,6 @@ def settingsDestroyed(e = None):
     reopen the main window and remake the hotkeys'''
     mainWindow.deiconify()
     spotifyIntern.makeHotKeys()
-
-# Loading Bar window
-def createLoadingBarWindow():
-    '''Creates the loading bar window'''
-    global loadingBarWindow
-    loadingBarWindow = tk.Toplevel()
-    loadingBarWindow.title("Loading Bar")
-    loadingBarWindow.iconbitmap("Images\\ValoBeatsLogo.ico")
-
-    # Calculates the middle of the screen
-    width = mainWindow.winfo_screenwidth() / 2
-    height = mainWindow.winfo_screenheight() / 2
-
-    # Creates a string of the offset needed to get to the center of the screen
-    oWidth = str(int(width - 540/2))
-    oHeight = str(int(height - 303/2 - 65))
-
-    # Creates size of screen
-    loadingBarWindow.geometry("540x303+" + oWidth + "+" + oHeight)
-
-    # Creates a canvas
-    global loadingBarCanvas
-    loadingBarCanvas = Canvas(loadingBarWindow, width = 540, height = 303)
-    loadingBarCanvas.pack(fill = "both", expand = True)
-
-    loadingBarCanvas.create_rectangle(90, 90, 460, 210, outline = "black", fill = "white", tag = "outline")
-    loadingBarCanvas.create_rectangle(100, 100, 110, 200, outline = "red", fill = "red", tag="box")
-    loadingBarCanvas.create_text(270, 150, text = "Song Download Progress", font = ("Lucida Sans", 30), fill = "#000000", tag = "text")
-
-    threading.Thread(target = loadingThread, daemon=True).start()
-
-def loadingThread():
-    '''Updates the loading bar'''
-    startTime = time.time()
-
-    sections = len(getSongsToDownload(startTime))
-    print(sections)
-
-    while True:
-        numSongsToDownload = len(getSongsToDownload(startTime))
-
-        if numSongsToDownload == 0:
-            break
-        print(numSongsToDownload)
-
-        # Updates the loading bar based on the number of songs to download vs original number of songs
-        try:
-            loadingBarCanvas.coords("box", 100, 100, 100 + 350 - int(350 / sections * numSongsToDownload), 200)
-            loadingBarCanvas.update()
-        except:
-            # If the window is closed, break out of the loop
-            break
-        time.sleep(1)
-
-    loadingBarWindow.destroy()
-
-def getSongsToDownload(startTime):
-    '''Gets the songs to download from the online playlist vs local'''
-    settingsFile = open("Config\\settings", "r")
-    playlistURL = settingsFile.readlines()[2]
-    settingsFile.close()
-    
-    # Gets the songs in the playlist
-    try:
-        tracks = spotifyIntern.spotifyClient.playlist_tracks(playlistURL)['items']
-
-        # Extract track URLs
-        spotifySongs = []
-        for track in tracks:
-            if track["track"]:
-                spotifySongs.append(track["track"]["external_urls"]["spotify"])
-
-        # Gets the folder of the songs
-        cwd = os.getcwd()
-        outputPath = cwd + "\\Songs\\LocalSongsOGG"
-
-        # Makes a list of the songs in the local folder
-        localSongs = []
-        for file in os.listdir(outputPath):
-            if file.endswith(".ogg"):
-                localSongs.append(file[:-4])
-
-        # Checks if the songs in spotifySongs are in localSongs
-        # If they are not, add them to the list of songs to download
-        songsToDownload = []
-        for song in spotifySongs:
-            songFileName = spotifyIntern.sanitizeFilename(song) + ".ogg"
-            if songFileName not in localSongs:
-                songsToDownload.append(song)
-    except:
-        # if we cant connect to the internet, (which shouldnt happen) we just pretend with time 10
-        songsToDownload = [1] * int(10 - (time.time() - startTime))
-
-    return songsToDownload
 
 def saveSettings():
     '''Saves the settings to the file'''
@@ -371,12 +277,11 @@ def saveSettings():
     settingsFile.write(radioGameType.get() + "\n")
 
     # Write the playlist link
-    settingsFile.write(playListLinkText.get())
+    settingsFile.write(playListLinkText.get() + "\n")
     
     # Write the playlist name only if it is valid else write previous file name
     tempFileName = spotifyIntern.playlistURLToFileName(playListLinkText.get())
     if tempFileName:
-        print(tempFileName)
         settingsFile.write(tempFileName)
     else:
         settingsFile.write(ogFileName)
@@ -396,22 +301,24 @@ def saveSettings():
         messagebox.showerror("No Devices", "No active devices found. Open Spotify on a device signed into your account and try again.")
         return
     else:
-        masterSongFile = open("Songs\\masterSongFile", "a")
-
         # Createing new playlist Song File or adding to previous
         fileName = spotifyIntern.playlistURLToFileName(playListLinkText.get())
         playlistSongFile = open("Songs\\" + fileName, "a")
+
+        uniqueSongs = spotifyIntern.updatePlaylistFile(fileName)
+        failedSongs = spotifyIntern.downloadNewSongs(uniqueSongs)
+        if failedSongs:
+            for song in failedSongs:
+                uniqueSongs.remove(song)
+        '''PART 2 Add new information to mastersongfile from user'''
         
         # Asks how you want to input the songs
-        uniqueSongs = spotifyIntern.updatePlaylistFile(fileName)
-        spotifyIntern.downloadNewSongs(uniqueSongs)
-        # Creates the loading bar window
-        createLoadingBarWindow()
-
         if len(uniqueSongs) != 0:
             realAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to use local playing to set the timing for all the songs? (Most accurate)")
             if not realAnswer:
                 spotAnswer = messagebox.askyesnocancel("Song Timing", "Would you like to use your spotify in your browser set the timing for all the songs?")
+
+        masterSongFile = open("Songs\\masterSongFile", "a")
 
         # Asks What time you want each new song to start at
         for song in uniqueSongs:
@@ -421,12 +328,16 @@ def saveSettings():
                 while True:
                     # Loops until we get correct input
                     messagebox.showinfo("Song Timing", "After pressing OK, wait until the time you want the song to play and then click any button")
-                    spotifyIntern.playSong(song)
+                    try:
+                        # only add it if the song is works when playing it
+                        spotifyIntern.playSong(song)
+                    except:
+                        break
                     # Waits for any key press
                     keyboard.read_key()
                     
                     time = spotifyIntern.getLocalPlayTime()
-                    spotifyIntern.pauseToggle()
+                    spotifyIntern.pausePlay()
                     
                     correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
                     
@@ -477,10 +388,10 @@ def saveHotKeys():
     settingsFile = open("Config\\hotkeys", "w")
 
     # Writing the hotkeys to the file
-    settingsFile.write(playKeyText.get() + "\n")
-    settingsFile.write(endKeyText.get() + "\n")
-    settingsFile.write(lowKeyText.get() + "\n")
-    settingsFile.write(highKeyText.get() + "\n")
+    settingsFile.write(playKeyText.get()  + "\n")
+    settingsFile.write(endKeyText.get()   + "\n")
+    settingsFile.write(lowKeyText.get()   + "\n")
+    settingsFile.write(highKeyText.get()  + "\n")
     settingsFile.write(pauseKeyText.get() + "\n")
 
     settingsFile.close()
@@ -526,11 +437,13 @@ def addSongNext():
         messagebox.showinfo("Search", "No saved song was found using the query: \"" + nextSongText.get() + "\". try narrowing it down by searching with the author as well.")
 
 def remakeSongFile():
-    answer = messagebox.askquestion("Confirmation", "Are you sure you want to DELETE ALL saved songs and redo the Song Timing for all the songs in the current playlist?")
+    '''Double checks that you want to delete the '''
+    answer = messagebox.askquestion("Confirmation", "Are you sure you want to DELETE ALL saved songs and redo the Song Timing for ALL saved songs?")
     if (answer == "yes"):
         spotifyIntern.deleteSongFile()
 
 def endProgram():
+    '''Closes and ends the program'''
     mainWindow.quit()
     mainWindow.destroy()
 
@@ -579,7 +492,6 @@ def main():
     global nextSongText
 
     # Creates buttons
-
     backGround = "#04121e"
     foreGround = "#f52740"
 
@@ -596,6 +508,7 @@ def main():
     settingsButton = Button(mainWindow, text = "Open Settings", bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = createSettingsWindow)
 
     closeButton = Button(mainWindow, text = "Close", bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = endProgram)
+    
     # Adds each element to the canvas
     mainCanvas.create_window(80, 80, window = shuffleButton)
     mainCanvas.create_window(80, 105, window = resetRoundsButton)

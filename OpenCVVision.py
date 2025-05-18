@@ -186,24 +186,25 @@ class OpenCVVision():
                         # Finds if the box is part of the banner
                         roundType = self.detectRoundType(x_pe, y_pe, w_pe, h_pe)
                         if roundType and roundType[0] == "1":
-                            print("Buy Phase: " + str(roundType))
-                            print(f"[{x_pe:.2f}", f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
+                            # print("Buy Phase: " + str(roundType))
+                            # print(f"[{x_pe:.2f}", f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
                             self.startMusic()
 
                             cv2.imwrite('buyroundEnd.png', img)
                             return
                         elif roundType:
-                            print("Round End: " + str(roundType))
-                            print(f"[{x_pe:.2f}", f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
+                            # print("Round End: " + str(roundType))
+                            # print(f"[{x_pe:.2f}", f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
                             cv2.imwrite('roundEnd.png', img)
                             roundEnd = True
 
                 # If the banner is not up, shoot at 1 fps
                 if not roundEnd:
                     time.sleep(1 / fps)
-                    print("1 fps")
+                    # print("1 fps")
                 else:
-                    print("unlimited fps")
+                    pass
+                    # print("unlimited fps")
 
                 # Sets variables for next loop
                 self.lastBoxes = currentBoxes
