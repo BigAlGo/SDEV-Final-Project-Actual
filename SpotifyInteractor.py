@@ -29,10 +29,10 @@ class SpotifyInteractor():
         self.songNumber = 0
         self.roundNumber = 1
 
-        #Initing spotify
+        # Initing spotipy
         clientId = "35661866380c4cdcb93e51cc756ee958"
         clientSecret = "fd334360adb04a7980412c946f1e00af"
-        # able to get and modify the playback state and able to read public playlists 
+        # Able to get and modify the playback state and able to read public playlists 
         SCOPE = "user-modify-playback-state user-read-playback-state"
         authManagerClient = SpotifyOAuth(
             client_id = clientId,
@@ -54,11 +54,12 @@ class SpotifyInteractor():
         self.spotdl = Spotdl(
             client_id = clientId,
             client_secret = clientSecret,
-            downloader_settings = downloader_settings,
+            downloader_settings = downloader_settings
         )
         self.nextSongs = []
         self.roundLoop = False
         self.savedKey = None
+        self.hotKeyRecord = None
         self.paused = False
 
     def roundStartHotKeyPressed(self):
@@ -429,10 +430,10 @@ class SpotifyInteractor():
             songUrls.append(line.split(" ")[0])
 
         cwd = os.getcwd()
-        LocalSongs = cwd + "\\Songs\\LocalSongsOGG"
+        localSongs = cwd + "\\Songs\\LocalSongsOGG"
 
         # Getting the number of songs in master vs in local
-        fileSongs = len(os.listdir(LocalSongs))
+        fileSongs = len(os.listdir(localSongs))
         nameSongs = len(songUrls)
         numberOfSongs = nameSongs - fileSongs
 
@@ -491,7 +492,7 @@ class SpotifyInteractor():
         return self.spotifyClient.track(url)['name']
     
     def getNameofPlaylist(self, uri):
-        '''Returns the name of a song given the uri'''
+        '''Returns the name of a playlist given the uri'''
         id = uri.split("spotify:playlist:")[1]
         return self.spotifyClient.playlist(id)['name']
     
@@ -541,9 +542,9 @@ class SpotifyInteractor():
         masterLines = songsFile.readlines()
 
         while True:
-            songQuery = simpledialog.askstring("Delete Song", "Please enter the song you would like to delete")
+            songQuery = simpledialog.askstring("Delete Songs", "Please enter the song you would like to delete")
             if songQuery == None:
-                break
+                return
             found = False
             # Searching for the song
             for track in self.searchForBestSong(songQuery)["tracks"]["items"]:
@@ -554,7 +555,7 @@ class SpotifyInteractor():
                         theUrl = track["external_urls"]["spotify"]
                         found = True
             if found:
-                areYouSure = messagebox.askyesno("Delete Song", "Are you sure you want to delete the song \"" + theSong + "\"?")
+                areYouSure = messagebox.askyesno("Delete Songs", "Are you sure you want to delete the song \"" + theSong + "\"?")
                 if areYouSure:
                     break
             else:
@@ -567,15 +568,69 @@ class SpotifyInteractor():
         songsFile.close()
 
 
-        fileAnswer = messagebox.askyesno("Delete Song", theSong + " has been removed. Would you also like to delete the mp3 file?")
-        if fileAnswer:
-            try:
-                song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(theUrl) + ".ogg"
-                os.remove(song_path)
-            except:
-                pass
-            messagebox.showinfo("Delete Song", theSong + " has been removed.")
+        if not messagebox.askyesno("Delete Songs", theSong + " has been removed. Would you also like to delete the mp3/ogg file?"):
+            return
+        
+        try:
+            song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(theUrl) + ".ogg"
+            os.remove(song_path)
+        except:
+            pass
+        messagebox.showinfo("Delete Songs", theSong + " has been removed.")
 
+    def remakeSongsInPlaylist(self, playlistURL):
+        '''Deletes all songs from the given playlist'''
+        if not self.isValidPlaylist():
+            messagebox.showerror("Invalid Input", "Please enter a valid playlist in the provided box")
+            return
+
+        if not messagebox.askyesno("Delete Songs", "Are you sure that you want to delete the song timings for all songs from the playlist " + self.playlistURLToFileName(playlistURL) + "?"):
+            return
+        
+        # Creates a list of new songs
+        tracks = self.spotifyClient.playlist_tracks(playlistURL)['items']
+
+        # Extract track URLs
+        urls = []
+        for track in tracks:
+            if track["track"]:
+                urls.append(track["track"]["external_urls"]["spotify"])
+
+        # Deletes all lines that match any url of the playlist
+        masterSongFile = open("Songs\\masterSongFile", "r")
+        masterLines = masterSongFile.readlines()
+        masterSongFile.close()
+
+        masterSongFile = open("Songs\\masterSongFile", "w")
+
+        # If a line doesnt contain any of the deleted urls, add it back
+        for line in masterLines:
+            found = False
+            for url in urls:
+                if url in line:
+                    found = True
+                    break
+
+            if not found:
+                masterSongFile.write(line)
+
+        if not messagebox.askyesno("Delete Songs", "The song timings have been removed. Would you also like to delete the mp3/ogg file?"):
+            return
+        
+        # Gets the place where the songs are stored
+        cwd = os.getcwd()
+        localSongsDir = cwd + "\\Songs\\LocalSongsOGG"
+
+        # Removes every song file that has a url we want to delete
+        for file in os.listdir(localSongsDir):
+            for url in urls:
+                if self.sanitizeFilename(url) in file:
+                    os.remove(os.path.join(localSongsDir, self.sanitizeFilename(url)))
+                    break
+
+    def deleteSongFile(self):
+        '''Deletes the contents of the masterSongFile'''
+        open("Songs\\masterSongFile", "w").close()
 
     def removeHotkeys(self):
         '''Removes any hotkeys'''

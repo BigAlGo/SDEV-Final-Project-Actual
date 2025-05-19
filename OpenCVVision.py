@@ -23,7 +23,7 @@ class OpenCVVision():
         self.ace = [[9.11, 5.19, 1.35, 6.48], [5.05, 5.19, 1.82, 6.39], [7.08, 5.09, 1.77, 6.57]]
         self.flawless = [[10.68, 5.74, 1.41, 5.09], [12.29, 5.65, 1.35, 5.19], [9.38, 5.65, 1.15, 5.19], [8.23, 5.65, 1.04, 5.19], [5.89, 5.65, 2.24, 5.19], [4.27, 5.65, 1.51, 5.28], [3.18, 5.65, 0.99, 5.19], [1.93, 5.65, 1.04, 5.19]]
         self.thrifty = [[12.03, 5.00, 1.82, 6.48], [10.31, 5.00, 1.61, 6.48], [8.85, 5.00, 1.30, 6.48], [7.86, 5.00, 0.73, 6.48], [5.83, 5.00, 1.77, 6.48], [3.75, 5.00, 1.82, 6.48], [2.03, 5.00, 1.51, 6.48]]
-        # But if you see the buy phase, instantly play music
+        # But if you see one of these, instantly play music
         self.buyPhase = [[7.03, 11.85, 1.30, 2.31], [1.35, 4.54, 1.46, 5.19], [13.12, 4.44, 1.15, 5.28], [11.56, 4.44, 1.41, 5.28], [9.95, 4.44, 1.51, 5.28], [8.28, 4.44, 1.51, 5.28], [6.72, 4.44, 1.41, 5.28], [2.97, 4.44, 1.46, 5.28]]
         self.lastRoundBeforeSwap = [[13.02, 4.44, 1.46, 5.28], [11.35, 4.44, 1.51, 5.28], [10.10, 4.44, 1.09, 5.28], [8.80, 4.44, 1.15, 5.28], [7.19, 4.44, 1.46, 5.28], [4.95, 4.44, 1.51, 5.28], [1.72, 4.44, 1.46, 5.28], [0.05, 4.44, 1.51, 5.28]] # rou d befo
         self.endGame = [[12.29, 4.44, 1.15, 5.28], [10.05, 4.44, 2.08, 5.28], [10.05, 4.44, 2.08, 5.28], [8.39, 4.44, 1.56, 5.28], [6.77, 4.44, 1.51, 5.28], [5.10, 4.44, 1.51, 5.28], [3.49, 4.44, 1.46, 5.28], [2.19, 4.44, 1.15, 5.28]]
@@ -116,7 +116,7 @@ class OpenCVVision():
         return distance < 0.25 and sizeDiff < 0.25
     
     def distance(self, arr1, arr2):
-        '''Takes in 2, arrays formatted in x, y, width, height and returns the distance and size difference between the two'''
+        '''Takes in 2 arrays formatted in x, y, width, height and returns the distance and size difference between the two'''
         distance = np.sqrt((arr1[0] - arr2[0]) ** 2 + (arr1[1] - arr2[1]) ** 2)
         sizeDiff = abs(arr1[2] - arr2[2]) + abs(arr1[3] - arr2[3])
         return distance, sizeDiff
@@ -211,18 +211,16 @@ class OpenCVVision():
 
 
     def debug(self):
-        '''Uses the startMusic function as the function to be called when the banner dissapears and prints some stuff'''
+        '''Uses the startMusic function as the function to be called when the banner dissapears and prints some stuff and ends when user hits "q" '''
         with mss.mss() as sct:
             key = cv2.waitKey(30)
             while not (key == ord('q') or key == 27):
-                print("frame")
                 screenshot = sct.grab(self.captureRegion) # Takes Screenshot
                 img = np.array(screenshot) # Convert to a usable format 
                 imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) # Convert to RGB
                 threshold = cv2.inRange(imgRGB, (210, 203, 202), (255, 255, 255)) # Threshold out evrything exept white
                 edges = cv2.Canny(threshold, threshold1=50, threshold2=150) # Finds edges
                 boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
-                cv2.imshow('img1', edges)
 
                 currentBoxes = []
 
@@ -245,7 +243,6 @@ class OpenCVVision():
                     blurred = cv2.GaussianBlur(threshold, (5, 5), 0)  # Reduce noise
                     edges = cv2.Canny(blurred, threshold1=50, threshold2=150) # Finds edges
                     boxes, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) # Finds boxes
-                    cv2.imshow('img2', edges)
 
 
                     for contour in boxes:
@@ -274,7 +271,7 @@ class OpenCVVision():
                     if sameBox:
                         # Percentage
                         x_pe, y_pe, w_pe, h_pe = x * 100, y * 100, w * 100, h * 100
-                        print(f"[{x_pe:.2f}, " + f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
+                        # print(f"[{x_pe:.2f}, " + f"{y_pe:.2f}", f"{w_pe:.2f}", f"{h_pe:.2f}]", sep = ", ")
 
                         x_px, y_px, w_px, h_px = int(x * self.screenWidth), int(y * self.screenHeight), int(w * self.screenWidth), int(h * self.screenHeight)
                         cv2.rectangle(img, (x_px, y_px), (x_px + w_px, y_px + h_px), (0, 255, 0), 2)
@@ -282,6 +279,7 @@ class OpenCVVision():
 
                         # Finds if the box is part of the banner
                         roundType = self.detectRoundType(x_pe, y_pe, w_pe, h_pe)
+                        print(roundType)
                         
                         # if roundType == "Buy Phase":
                             # print("Sees Buy " + str(roundType))
@@ -292,8 +290,8 @@ class OpenCVVision():
 
                 self.lastBoxes = currentBoxes 
 
-                # cv2.imshow('img', img)
-                # cv2.imshow('threshgold', edges)
+                cv2.imshow('img', img)
+                cv2.imshow('threshgold', threshold)
                 key = cv2.waitKey(30)
 
 

@@ -12,7 +12,6 @@ import os
 
 # remake all songs in a playlist
 # remake all master songs
-# add a loading bar to downloading songs
 
 # pause doeent work
 def createSettingsWindow():
@@ -153,6 +152,7 @@ def createHotKeyWindow():
     lowKeyText =   Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
     highKeyText =  Entry(hotkeyWindow, justify = "center", width = 10, bg = "#000000", fg = "#f57e3a")
 
+    # Not doing anything
     playKeyText .bind("<Button-1>", spotifyIntern.hotKeyEntryClicked)
     endKeyText  .bind("<Button-1>", spotifyIntern.hotKeyEntryClicked)
     pauseKeyText.bind("<Button-1>", spotifyIntern.hotKeyEntryClicked)
@@ -184,14 +184,14 @@ def createHotKeyWindow():
     hotkeyCanvas.create_text(50, 50, justify = "center", text = "Play Hotkey")
     hotkeyCanvas.create_text(170, 50, justify = "center", text = "End Game Hotkey")
     hotkeyCanvas.create_text(290, 50, justify = "center", text = "Pause Hotkey")
-    hotkeyCanvas.create_text(105, 150, justify = "center", text = "Volume Down Hotkey")
-    hotkeyCanvas.create_text(235, 150, justify = "center", text = "Volume Up Hotkey")
+    hotkeyCanvas.create_text(235, 150, justify = "center", text = "Volume Down Hotkey")
+    hotkeyCanvas.create_text(105, 150, justify = "center", text = "Volume Up Hotkey")
 
     hotkeyCanvas.create_window(50, 70, window = playKeyText)
     hotkeyCanvas.create_window(170, 70, window = endKeyText)
     hotkeyCanvas.create_window(290, 70, window = pauseKeyText)
-    hotkeyCanvas.create_window(105, 170, window = lowKeyText)
-    hotkeyCanvas.create_window(235, 170, window = highKeyText)
+    hotkeyCanvas.create_window(235, 170, window = lowKeyText)
+    hotkeyCanvas.create_window(105, 170, window = highKeyText)
 
     hotkeyCanvas.create_window(270, 250, window = saveButton)
     # hotkeyCanvas.create_window(170, 120, window = recordButton) doesnt work, probebly remove
@@ -225,21 +225,26 @@ def createRemakeWindow():
     # Adds the image to the canvas
     remakeCanvas.create_image(0, 0, image = hotkeyImage, anchor = "nw")
 
+    # Colors
+    backGround = "#a71200"
+    foreGround = "#180903"
+    black = "#000000"
+
     global remakeOneButton
     global remakeAllButton
     global remakePlaylistButton
 
     # Creates the buttons for remaking    
-    remakeOneButton =      Button(remakeWindow, text = "Remake One", command = spotifyIntern.remakeOneSong, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
-    remakeAllButton =      Button(remakeWindow, text = "Remake All", command = remakeSongFile, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
-    remakePlaylistButton = Button(remakeWindow, text = "Remake Playlist", bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
+    remakeOneButton =      Button(remakeWindow, text = "Remake One", command = spotifyIntern.remakeOneSong, bg = backGround, fg = foreGround, activebackground = black, activeforeground = backGround)
+    remakeAllButton =      Button(remakeWindow, text = "Remake All", command = remakeSongFile, bg = backGround, fg = foreGround, activebackground = black, activeforeground = backGround)
+    remakePlaylistButton = Button(remakeWindow, text = "Remake Playlist", command = lambda: spotifyIntern.remakeSongsInPlaylist(playListLinkText.get()), bg = backGround, fg = foreGround, activebackground = black, activeforeground = backGround)
 
-    closeButton = Button(remakeWindow, text = "Close", command = remakeWindow.destroy, bg = "#f57e3a", fg = "#000000", activebackground = "#000000", activeforeground = "#f57e3a")
+    closeButton = Button(remakeWindow, text = "Close", command = remakeWindow.destroy, bg = backGround, fg = black, activebackground = black, activeforeground = backGround)
     
     # Adding the elements
-    remakeCanvas.create_window(50, 70, window = remakeOneButton)
-    remakeCanvas.create_window(170, 70, window = remakeAllButton)
-    remakeCanvas.create_window(290, 70, window = remakePlaylistButton)
+    remakeCanvas.create_window(465, 180, window = remakeOneButton)
+    remakeCanvas.create_window(270, 40, window = remakeAllButton)
+    remakeCanvas.create_window(75, 180, window = remakePlaylistButton)
 
     remakeCanvas.create_window(270, 250, window = closeButton)
 
@@ -251,6 +256,11 @@ def settingsDestroyed(e = None):
 
 def saveSettings():
     '''Saves the settings to the file'''
+    if not spotifyIntern.makeHotKeys():
+        spotifyIntern.removeHotkeys()
+        messagebox.showerror("Invalid Input", "One of the hotkeys you have entered are not valid")
+        return
+
     # Gets the previous file name incase we can't connect to internet
     settingsFile = open("Config\\settings", "r")
     ogFileName = settingsFile.readlines()[3]
@@ -396,8 +406,6 @@ def saveHotKeys():
 
     settingsFile.close()
 
-    spotifyIntern.makeHotKeys()
-
     hotkeyWindow.destroy()
 
 def addSongNext():
@@ -437,10 +445,17 @@ def addSongNext():
         messagebox.showinfo("Search", "No saved song was found using the query: \"" + nextSongText.get() + "\". try narrowing it down by searching with the author as well.")
 
 def remakeSongFile():
-    '''Double checks that you want to delete the '''
-    answer = messagebox.askquestion("Confirmation", "Are you sure you want to DELETE ALL saved songs and redo the Song Timing for ALL saved songs?")
-    if (answer == "yes"):
-        spotifyIntern.deleteSongFile()
+    '''Double checks that you want to delete the master song file'''
+    if not messagebox.askyesno("Delete Songs", "Are you sure you want to DELETE ALL saved songs and redo the song timing for ALL saved songs?"):
+        return
+    
+    spotifyIntern.deleteSongFile()
+
+    answer = messagebox.askyesno("Delete Songs", "All song timings have been removed. Would you also like to delete ALL saved mp3/ogg files?")
+    if answer:
+        for file in os.listdir("Songs\\LocalSongsOGG"):
+            os.remove(os.path.join("Songs\\LocalSongsOGG", file))
+        messagebox.showinfo("Delete Songs", "All song files have been removed.")
 
 def endProgram():
     '''Closes and ends the program'''
@@ -500,7 +515,7 @@ def main():
     boarderWidth = 0,
 
     shuffleButton   = Button(mainWindow, text = "Shuffle songs", width = 12, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = spotifyIntern.shuffleSongs)
-    resetRoundsButton = Button(mainWindow, text = "Finish Game", width = 12, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = spotifyIntern.resetRounds)
+    resetRoundsButton = Button(mainWindow, text = "Finish Game", width = 12, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = spotifyIntern.stopRoundLoop)
 
     searchButton = Button(mainWindow, text = "Add Next Song To Play", width = 18, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = addSongNext)
     nextSongText = Entry(mainWindow, justify = "center", width = 22, bg = foreGround, fg = backGround)
@@ -525,3 +540,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# * LICENESES * #
+# All images were created by Sora AI
+# sora.chatgpt.com

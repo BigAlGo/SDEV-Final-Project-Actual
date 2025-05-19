@@ -14,6 +14,23 @@ The file to run is ValoBeatsMain
 
 If you get the error "requests.exceptions.SSLError: HTTPSConnectionPool" That means either you dont have internet or the connection was blocked by a firewall
 
+Here are the directions for using the app. It takes a minute to set up but I made it as user friendly as possible
+
+The first thing you should see upon launching the app is your browser opening a tab asking ValoBeats for permission to accesing some things about your spotify profile. If you don't allow it then the app will not work. If it sends you to a white page then it means you are being blocked by a firewall.
+
+Once you get into the app, you will see a few buttons. As this is just the setup we will first click settings. Now you will see the settings window, this is where all the settings are. At the top there is the playlist URL entry. Create a PUBLIC playlist in Spotify and paste the url into the given field. 
+
+Under the Volume text there are 2 slidey bars, the left one is the loud volume and the right one is the quiet volume. We will make hotkeys that will use these values later.
+
+Under that is a multiple choice between Unrated/Competitive, SwiftPlay, and SpikeRush. This is important because the program will need to track when halftime is, how long the rounds are, and other things.
+
+Under that you will see buttons to open the Remake Window and the Hotkey Window. The remake window can delete saved songs if you messed up the timings. You can select "Remake Playlist" to delete all the songs in the current playlist. You can select "Remake All" to delete all saved songs. You can select "Remake One" to search for a song and delete a single song. The search uses Spotify's search algorithm so you can past the url or just search by the song's name and artist if needed.
+
+The Hotkey Window contains all 5 hotkeys. Press the play hotkey when you have started the game, press the end game hotkey when the game is over to stop the music, press the pause hotkey to pause the music, press the volume up hotkey to turn the volume up to the loud volume, press the volume down hotkey to turn the volume down to the quiet volume. The problem with these hotkeys is that Riot's Anti Cheat will sometimes block these buttons from working when tabbed into the game. So you may have to press them multiple times before they work.
+
+Under that is finnaly the save button. Click this when you are done inputting information. It will save all of your choices and then download songs if they are not already downloaded. It will then ask you to input the songtimings for each song. The first option is to play them locally. This will use the local song file which could be different from the spotify version. This makes it the most accurate.
+
+
 The first round has a preround length of 44 seconds but depending on wifi you migh load in later so for the first round You will press the hotkey when the clock hits 30 (or for spike rush, 10)
 
 Make sure to hit the button to end the game when the game is over
