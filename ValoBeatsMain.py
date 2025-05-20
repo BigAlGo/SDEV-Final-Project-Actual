@@ -1,3 +1,5 @@
+'''This file Contains methods to create tkinter windows
+and contains some file intearctions'''
 import tkinter as tk
 from tkinter import *
 from tkinter import messagebox
@@ -510,12 +512,12 @@ def main():
 
     activebackground = "#f52740"
     activeforeground = "#04121e"
-    boarderWidth = 0,
+    boarderWidth = 0
 
     shuffleButton   = Button(mainWindow, text = "Shuffle songs", width = 12, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = spotifyIntern.shuffleSongs)
     resetRoundsButton = Button(mainWindow, text = "Finish Game", width = 12, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = spotifyIntern.stopRoundLoop)
 
-    searchButton = Button(mainWindow, text = "Add Next Song To Play", width = 18, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = addSongNext)
+    searchButton = Button(mainWindow, text = "Add Song To Queue", width = 18, bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = addSongNext)
     nextSongText = Entry(mainWindow, justify = "center", width = 22, bg = foreGround, fg = backGround)
 
     settingsButton = Button(mainWindow, text = "Open Settings", bg = backGround, fg = foreGround, activebackground = activebackground, activeforeground = activeforeground, bd = boarderWidth, command = createSettingsWindow)

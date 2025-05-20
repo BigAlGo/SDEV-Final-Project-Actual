@@ -1,3 +1,6 @@
+Purpose of App:
+The purpose of this app is to be able to automatically play music and time it so the beat will drop as the barriers are falling, there is also support for hotkeys changing the volume of the music so you can have it louder or quieter depending on what you are doing.
+
 IMPORTANT: You must run:
 
 .\pip install spotipy # Spotify's API
@@ -26,11 +29,21 @@ Under that is a multiple choice between Unrated/Competitive, SwiftPlay, and Spik
 
 Under that you will see buttons to open the Remake Window and the Hotkey Window. The remake window can delete saved songs if you messed up the timings. You can select "Remake Playlist" to delete all the songs in the current playlist. You can select "Remake All" to delete all saved songs. You can select "Remake One" to search for a song and delete a single song. The search uses Spotify's search algorithm so you can past the url or just search by the song's name and artist if needed.
 
-The Hotkey Window contains all 5 hotkeys. Press the play hotkey when you have started the game, press the end game hotkey when the game is over to stop the music, press the pause hotkey to pause the music, press the volume up hotkey to turn the volume up to the loud volume, press the volume down hotkey to turn the volume down to the quiet volume. The problem with these hotkeys is that Riot's Anti Cheat will sometimes block these buttons from working when tabbed into the game. So you may have to press them multiple times before they work.
+The Hotkey Window contains all 5 hotkeys. Press the play hotkey when you have started the game, press the end game hotkey when the game is over to stop the music, press the pause hotkey to pause the music, press the volume up hotkey to turn the volume up to the loud volume, press the volume down hotkey to turn the volume down to the quiet volume. 
+The problem with these hotkeys is that Riot's Anti Cheat will sometimes block these buttons from working when tabbed into the game. So you may have to press them multiple times before they work.
 
-Under that is finnaly the save button. Click this when you are done inputting information. It will save all of your choices and then download songs if they are not already downloaded. It will then ask you to input the songtimings for each song. The first option is to play them locally. This will use the local song file which could be different from the spotify version. This makes it the most accurate.
+Under that is finnaly the save button. Click this when you are done inputting information. It will save all of your choices and then download songs if they are not already downloaded. It will then ask you to input the songtimings for each song. 
 
+The first option is to play them locally. This will use the local song file which could be different from the spotify version. This makes it the most accurate timing wise. Or you can do it using spotify on your device. This allows you to scrub through the song if you don't want to wait for the song to just play out. Otherwise you can just manually input a time.
 
-The first round has a preround length of 44 seconds but depending on wifi you migh load in later so for the first round You will press the hotkey when the clock hits 30 (or for spike rush, 10)
+After clicking save you will be taken back to the main window where there are 4 other buttons. The one in the center is the close button. It closes the program. Above the red entry box is the "Add Song To Queue" button. Enter the name of a song that you have previously downloaded in to the entry box and then click the button. This will again use spotify's search algorithm to find the song. It will then add that song to the queue to play next time.
+
+The 2 buttons at the top left are the shuffle button and the end game button. The shuffle button will shuffle the songs around in the current playlist. They playlist file is refreshed whenever you click save on the settings window if you want to un-shuffle them. Then the last button is the end game button. You can either click this or click the hotkey when the game ends to stop the music
+
+Now you know all about the different buttons so here is how you use the app.
+
+The first round has a preround length of 45 seconds but depending on wifi you migh load in later so for the first round you will press the play hotkey when the clock hits 30 (or for spike rush, 10).
+
+The program will then play the music and read your screen to determine when the rounds start and end, keeps track of when halftime is, and will dynamicly update based on what is in your settings.
 
 Make sure to hit the button to end the game when the game is over

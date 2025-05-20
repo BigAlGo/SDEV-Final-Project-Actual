@@ -7,8 +7,10 @@ import threading
 # Todo when flased it breakes
 # todo when switching people it breaks
 class OpenCVVision():
+    '''This class contains a methods to be able to read the round event banner in valorant 
+    using an Open CV pipeline'''
     def __init__(self, screenWidth, screenHeight, func):
-        # Takes in the screen size and a function to be called on round start
+        '''Takes in the screen size and a function to be called upon round start'''
         self.startMusic = func
         self.lastBoxes = []
         self.screenWidth = screenWidth

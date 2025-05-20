@@ -19,6 +19,7 @@ from spotdl import Spotdl
 from spotdl.types.options import DownloaderOptions
 
 class SpotifyInteractor():
+    '''This class contains methods to interact with spotify and writing to the local file system'''
     def __init__(self, screenWidth, screenHeight):
         '''Creates a SpotifyInteractor object by creating a spotdl object and a spotpy object'''
         self.vision = OpenCv.OpenCVVision(screenWidth, screenHeight, self.roundStart)
@@ -70,6 +71,7 @@ class SpotifyInteractor():
 
     def roundStartHotKeyPressed(self):
         '''Pass through function'''
+        self.setVolumeHigh()
         self.startRoundLoop()
 
     def startRoundLoop(self):
@@ -111,6 +113,16 @@ class SpotifyInteractor():
         songTime = float(songLine.split(" ")[-1].strip())
         songUrl = songLine.split(" ")[0]
 
+        # Update song number
+        if len(self.nextSongs) == 0:
+            # Loops through the song file
+            if self.songNumber > len(songLines) - 1:
+                self.songNumber = 1
+            else:
+                self.songNumber += 1
+        else:
+            self.nextSongs.pop(0)
+
         # Determine game type
         file = open("Config\\settings", "r")
         gameType = file.readlines()[1].strip()
@@ -133,8 +145,6 @@ class SpotifyInteractor():
         else:
             thisRoundTime = normalRoundTime
         
-        # thisRoundTime -= 0.5
-
         roundStartTime = startTime + thisRoundTime
 
         # Figure out if we need to wait or play now
@@ -197,16 +207,7 @@ class SpotifyInteractor():
         # Making sure the text is off screen before running vision
         time.sleep(1)
 
-        # Update song number
-        if len(self.nextSongs) == 0:
-            # Loops through the song file
-            if self.songNumber > len(songLines) - 1:
-                self.songNumber = 1
-            else:
-                self.songNumber += 1
-        else:
-            self.nextSongs.pop(0)
-
+        # Update round number
         self.roundNumber += 1
         
         if self.roundLoop:
