@@ -43,8 +43,8 @@ class SpotifyInteractor():
         )
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
         
-        outputDir = "Songs\\LocalSongsOGG"
         # SpotDL options
+        outputDir = "Songs\\LocalSongsOGG"
         downloader_settings = {
             "output_format": "ogg",
             "output": outputDir,
@@ -56,11 +56,17 @@ class SpotifyInteractor():
             client_secret = clientSecret,
             downloader_settings = downloader_settings
         )
+        # Checking of you are able to connect to spotify's servers
+        devices = self.getDevices()
+        if devices == False:
+            messagebox.showwarning("Connection Failed", "Unable to connect to the Spotify servers, It is blocked by a firewall or something")
+ 
         self.nextSongs = []
         self.roundLoop = False
         self.savedKey = None
         self.hotKeyRecord = None
         self.paused = False
+        self.lastPauseTime = time.time()
 
     def roundStartHotKeyPressed(self):
         '''Pass through function'''
@@ -226,7 +232,7 @@ class SpotifyInteractor():
             keyboard.add_hotkey(endKey, callback = self.stopRoundLoop)
             keyboard.add_hotkey(lowKey, callback = self.setVolumeLow)
             keyboard.add_hotkey(highKey, callback = self.setVolumeHigh)
-            keyboard.add_hotkey(pauseKey, callback = self.pausePlay, trigger_on_release = True)
+            keyboard.add_hotkey(pauseKey, callback = self.pausePlay)
 
             return True
         except ValueError:
@@ -618,15 +624,20 @@ class SpotifyInteractor():
             return
         
         # Gets the place where the songs are stored
-        cwd = os.getcwd()
-        localSongsDir = cwd + "\\Songs\\LocalSongsOGG"
+        localSongsDir = "Songs\\LocalSongsOGG"
 
         # Removes every song file that has a url we want to delete
         for file in os.listdir(localSongsDir):
             for url in urls:
                 if self.sanitizeFilename(url) in file:
-                    os.remove(os.path.join(localSongsDir, self.sanitizeFilename(url)))
+                    try:
+                        song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(url) + ".ogg"
+                        os.remove(song_path)
+                    except:
+                        pass
                     break
+        messagebox.showinfo("Delete Songs", "All songs from " + self.playlistURLToFileName(playlistURL) + " have been removed.")
+
 
     def deleteSongFile(self):
         '''Deletes the contents of the masterSongFile'''
@@ -648,7 +659,6 @@ class SpotifyInteractor():
 
         mixer.music.play(loops = -1, fade_ms = fade)
     
-    # todo maybe make it fade?
     def setVolumeHigh(self):
         '''Sets the volume to the high volume'''
         settingFile = open("Config\\settings", "r")
@@ -680,12 +690,18 @@ class SpotifyInteractor():
         return float(fileLines[0][3:6]) // 100
 
     def pausePlay(self):
-        '''Pauses music if it is playing and plays music if it is paused'''
-        print(mixer.music.get_busy())
+        '''Pauses music if it is playing and plays music if it is paused with a debounce'''
+
+        if time.time() - self.lastPauseTime < 0.5:
+            return
+        self.lastPauseTime = time.time()
         if mixer.music.get_busy():
             mixer.music.pause()
         else:
             mixer.music.unpause()
+    def unloadSong(self):
+        '''Unloads they current song to be able to delete it'''
+        mixer.music.unload()
 
     def setNextSong(self, set):
         '''Sets the next song'''

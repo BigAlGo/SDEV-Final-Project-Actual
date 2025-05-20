@@ -10,10 +10,6 @@ import threading
 import time
 import os
 
-# remake all songs in a playlist
-# remake all master songs
-
-# pause doeent work
 def createSettingsWindow():
     '''Creates the settings window'''
     # Hides main window
@@ -198,7 +194,7 @@ def createHotKeyWindow():
 
 
 def createRemakeWindow():
-    '''Creates the hotkey window'''
+    '''Creates the remake window'''
     global remakeWindow
     remakeWindow = tk.Toplevel()
     remakeWindow.title("Remake")
@@ -352,9 +348,11 @@ def saveSettings():
                     correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
                     
                     if (correct == None or correct == True):
+                        spotifyIntern.unloadSong()
                         break
                 if correct:
                     # Only add the song if they didn't press cancel
+                    spotifyIntern.unloadSong()
                     masterSongFile.write(song + " " + str(time) + "\n")
                     playlistSongFile.write(song + " " + str(time) + "\n")
             # Using Spotify in browser
@@ -362,7 +360,7 @@ def saveSettings():
                 correct = False
                 while True:
                     # Loops until we get correct input
-                    messagebox.showinfo("Song Timing", "Please go to the time at which you want the song " + spotifyIntern.getNameOfSong(song) + " to start on a device and then click OK")
+                    messagebox.showinfo("Song Timing", "Please go to the time at which you want the song " + spotifyIntern.getNameOfSong(song) + " to start on a device in spotify and then click OK")
                     time = spotifyIntern.getSongTime()
                     if (time != -1):
                         correct = messagebox.askyesnocancel("Song Timing", "The time you entered is " + str(time) + ". Is this correct?")
