@@ -21,7 +21,12 @@ from spotdl.types.options import DownloaderOptions
 class SpotifyInteractor():
     '''This class contains methods to interact with spotify and writing to the local file system'''
     def __init__(self, screenWidth, screenHeight):
-        '''Creates a SpotifyInteractor object by creating a spotdl object and a spotpy object'''
+        '''Creates a SpotifyInteractor object by creating a spotdl object and a spotipy object and an OpenCV object'''
+        # Makes the directory if it doesn't exist
+        folder_path = "Songs\\LocalSongOGG"
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
         self.vision = OpenCv.OpenCVVision(screenWidth, screenHeight, self.roundStart)
 
         mixer.init()
