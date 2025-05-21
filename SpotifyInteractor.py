@@ -116,7 +116,7 @@ class SpotifyInteractor():
         # Update song number
         if len(self.nextSongs) == 0:
             # Loops through the song file
-            if self.songNumber > len(songLines) - 1:
+            if self.songNumber > len(songLines) - 2:
                 self.songNumber = 1
             else:
                 self.songNumber += 1
