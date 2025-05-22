@@ -301,6 +301,6 @@ def DoOrDie():
     print("HE DID")
 
 if __name__ == "__main__":
-    # opencv = OpenCVVision(1920, 1080, DoOrDie)
-    opencv = OpenCVVision(1366, 768, DoOrDie)
+    opencv = OpenCVVision(1920, 1080, DoOrDie)
+    # opencv = OpenCVVision(1366, 768, DoOrDie)
     opencv.debug()

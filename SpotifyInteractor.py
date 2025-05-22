@@ -23,7 +23,7 @@ class SpotifyInteractor():
     def __init__(self, screenWidth, screenHeight):
         '''Creates a SpotifyInteractor object by creating a spotdl object and a spotipy object and an OpenCV object'''
         # Makes the directory if it doesn't exist
-        folder_path = "Songs\\LocalSongOGG"
+        folder_path = "Songs\\LocalSongsOGG"
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -412,8 +412,8 @@ class SpotifyInteractor():
         # Getting the number of songs
         numberOfSongs = len(songUrls)
 
-        # Assumes 15 sec per song to download
-        timeSec = 15 * numberOfSongs
+        # Assumes 25 sec per song to download
+        timeSec = 25 * numberOfSongs
         
         timeMinute = int(timeSec / 60.0)
         timeSec = timeSec % 60
