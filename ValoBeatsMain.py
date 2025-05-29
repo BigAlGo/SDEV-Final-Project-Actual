@@ -451,10 +451,10 @@ def remakeSongFile():
     
     spotifyIntern.deleteSongFile()
 
-    answer = messagebox.askyesno("Delete Songs", "All song timings have been removed. Would you also like to delete ALL saved mp3/ogg files?")
+    answer = messagebox.askyesno("Delete Songs", "All song timings have been removed. Would you also like to delete ALL saved mp3/opus files?")
     if answer:
-        for file in os.listdir("Songs\\LocalSongsOGG"):
-            os.remove(os.path.join("Songs\\LocalSongsOGG", file))
+        for file in os.listdir("Songs\\LocalSongsOPUS"):
+            os.remove(os.path.join("Songs\\LocalSongsOPUS", file))
         messagebox.showinfo("Delete Songs", "All song files have been removed.")
 
 def endProgram():

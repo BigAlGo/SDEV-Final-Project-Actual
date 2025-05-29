@@ -23,7 +23,7 @@ class SpotifyInteractor():
     def __init__(self, screenWidth, screenHeight):
         '''Creates a SpotifyInteractor object by creating a spotdl object and a spotipy object and an OpenCV object'''
         # Makes the directory if it doesn't exist
-        folder_path = "Songs\\LocalSongsOGG"
+        folder_path = "Songs\\LocalSongsOPUS"
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -50,9 +50,9 @@ class SpotifyInteractor():
         self.spotifyClient = spotipy.Spotify(auth_manager = authManagerClient)
         
         # SpotDL options
-        outputDir = "Songs\\LocalSongsOGG"
+        outputDir = "Songs\\LocalSongsOPUS"
         downloader_settings = {
-            "output_format": "ogg",
+            "output_format": "opus",
             "output": outputDir,
             "threads": 1
         }
@@ -168,7 +168,7 @@ class SpotifyInteractor():
                 time.sleep(0.05)
 
             # Load song
-            songPath = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(songUrl) + ".ogg"
+            songPath = "Songs\\LocalSongsOPUS\\" + self.sanitizeFilename(songUrl) + ".opus"
             mixer.music.load(songPath)
 
             while time.time() < playAfterTime:
@@ -193,7 +193,7 @@ class SpotifyInteractor():
                 time.sleep(0.05)
 
             # Load song
-            songPath = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(songUrl) + ".ogg"
+            songPath = "Songs\\LocalSongsOPUS\\" + self.sanitizeFilename(songUrl) + ".opus"
             mixer.music.load(songPath)
 
             while time.time() < playTime:
@@ -442,7 +442,7 @@ class SpotifyInteractor():
             songUrls.append(line.split(" ")[0])
 
         cwd = os.getcwd()
-        localSongs = cwd + "\\Songs\\LocalSongsOGG"
+        localSongs = cwd + "\\Songs\\LocalSongsOPUS"
 
         # Getting the number of songs in master vs in local
         fileSongs = len(os.listdir(localSongs))
@@ -580,11 +580,11 @@ class SpotifyInteractor():
         songsFile.close()
 
 
-        if not messagebox.askyesno("Delete Songs", theSong + " has been removed. Would you also like to delete the mp3/ogg file?"):
+        if not messagebox.askyesno("Delete Songs", theSong + " has been removed. Would you also like to delete the mp3/opus file?"):
             return
         
         try:
-            song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(theUrl) + ".ogg"
+            song_path = "Songs\\LocalSongsOPUS\\" + self.sanitizeFilename(theUrl) + ".opus"
             os.remove(song_path)
         except:
             pass
@@ -626,18 +626,18 @@ class SpotifyInteractor():
             if not found:
                 masterSongFile.write(line)
 
-        if not messagebox.askyesno("Delete Songs", "The song timings have been removed. Would you also like to delete the mp3/ogg file?"):
+        if not messagebox.askyesno("Delete Songs", "The song timings have been removed. Would you also like to delete the mp3/opus file?"):
             return
         
         # Gets the place where the songs are stored
-        localSongsDir = "Songs\\LocalSongsOGG"
+        localSongsDir = "Songs\\LocalSongsOPUS"
 
         # Removes every song file that has a url we want to delete
         for file in os.listdir(localSongsDir):
             for url in urls:
                 if self.sanitizeFilename(url) in file:
                     try:
-                        song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(url) + ".ogg"
+                        song_path = "Songs\\LocalSongsOPUS\\" + self.sanitizeFilename(url) + ".opus"
                         os.remove(song_path)
                     except:
                         pass
@@ -660,7 +660,7 @@ class SpotifyInteractor():
 
     def playSong(self, url, fade = 0):
         '''Plays a song using pygame mixer given the url and how long you want the fade to be'''
-        song_path = "Songs\\LocalSongsOGG\\" + self.sanitizeFilename(url) + ".ogg"
+        song_path = "Songs\\LocalSongsOPUS\\" + self.sanitizeFilename(url) + ".opus"
         mixer.music.load(song_path)
 
         mixer.music.play(loops = -1, fade_ms = fade)
@@ -725,8 +725,8 @@ class SpotifyInteractor():
         cwdUser = cwd[:cwd[9:].find("\\") + 9]
 
         spotdlPath = cwdUser + "\\AppData\\Roaming\\Python\\Python313\\Scripts\\spotdl.exe"
-        outputPath = cwd + "\\Songs\\LocalSongsOGG"
-        fileName = self.sanitizeFilename(url) + ".ogg"
+        outputPath = cwd + "\\Songs\\LocalSongsOPUS"
+        fileName = self.sanitizeFilename(url) + ".opus"
         
         # if file already exists
         for file in os.listdir(outputPath):
@@ -734,10 +734,10 @@ class SpotifyInteractor():
                 return
         try:
             try:
-                subprocess.run([spotdlPath, url, "--format", "ogg", "--output", outputPath], check=True)
+                subprocess.run([spotdlPath, url, "--format", "opus", "--bitrate", "128k", "--output", outputPath], check=True)
             except FileNotFoundError:
                 try:
-                    subprocess.run([spotdlPath.replace("Roaming", "Local\\Programs"), url, "--format", "ogg", "--output", outputPath], check=True)
+                    subprocess.run([spotdlPath.replace("Roaming", "Local\\Programs"), url, "--format", "opus", "--bitrate", "128k", "--output", outputPath], check=True)
                 except Exception as e:
                     messagebox.showerror("Your spotdl is installed in the wrong place. Make sure it is installed under \\AppData\\Roaming\\Python\\Python313\\Scripts\\spotdl.exe\nOr under \\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\spotdl.exe")
                     return False
@@ -746,14 +746,14 @@ class SpotifyInteractor():
             newFilePath = os.path.join(outputPath, fileName) 
 
             # List all files in the directory
-            ogg_files = os.listdir(outputPath)
+            opus_files = os.listdir(outputPath)
 
             # Find the most recently modified file
             latest_file = None
             latest_mtime = 0
 
-            # Loop through the filtered ogg files to find the one with the most recent modification
-            for file in ogg_files:
+            # Loop through the filtered opus files to find the one with the most recent modification
+            for file in opus_files:
                 file_path = os.path.join(outputPath, file)
                 file_mtime = os.path.getmtime(file_path)
 
@@ -785,7 +785,7 @@ if __name__ == "__main__":
     print("init time: ", time.time() - startTime)
     startTime = time.time()
 
-    mixer.music.load("Songs\\LocalSongsOGG\\TestSong.ogg")
+    mixer.music.load("Songs\\LocalSongsOPUS\\TestSong.opus")
 
     print("load time: ", time.time() - startTime)
     # startTime = time.time()
